@@ -1,26 +1,102 @@
 <!doctype html>
-<html lang="en">
+<html lang="uz">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kartograf — Free Map Poster & Wallpaper Creator</title>
+
+    <!-- Primary SEO -->
+    <title>Kartograf — Xarita Poster va Wallpaper Yaratuvchi | Free Map Poster Maker</title>
     <meta
       name="description"
-      content="Create beautiful map posters and wallpapers of any city — free, no sign-up. Themes, markers, routes and high-resolution PNG/JPEG/PDF export."
+      content="Istalgan shahar xaritasidan bepul poster va wallpaper yarating — 10 ta dizayn mavzusi, belgilar, marshrutlar, yuqori sifatli PNG/JPEG/PDF eksport. Create free custom map posters and phone wallpapers of any city, no sign-up."
+    />
+    <meta
+      name="keywords"
+      content="xarita poster, map poster, xarita wallpaper, map wallpaper, poster yaratish, shahar xaritasi, city map print, map art, custom map poster, bepul poster maker, Toshkent xarita, street map poster, phone wallpaper maker, kartograf"
+    />
+    <meta name="author" content="Kartograf" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://map.javohir.ru/" />
+    <meta name="theme-color" content="#0b111c" />
+
+    <!-- Open Graph (Facebook, Telegram, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://map.javohir.ru/" />
+    <meta property="og:site_name" content="Kartograf" />
+    <meta property="og:title" content="Kartograf — Free Map Poster & Wallpaper Creator" />
+    <meta
+      property="og:description"
+      content="Istalgan shahar xaritasidan bepul poster va wallpaper yarating. Create beautiful custom map posters of any city — themes, markers, routes, high-res export."
+    />
+    <meta property="og:image" content="https://map.javohir.ru/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kartograf — Free Map Poster & Wallpaper Creator" />
+    <meta property="og:locale" content="uz_UZ" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kartograf — Free Map Poster & Wallpaper Creator" />
+    <meta
+      name="twitter:description"
+      content="Create beautiful custom map posters and wallpapers of any city — free, no sign-up. Themes, markers, routes, high-resolution export."
+    />
+    <meta name="twitter:image" content="https://map.javohir.ru/og-image.png" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Kartograf",
+        "url": "https://map.javohir.ru/",
+        "description": "Free map poster and wallpaper creator. Design custom city map posters with themes, markers and routes, then export in high resolution (PNG, JPEG, PDF).",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "inLanguage": ["uz", "en"],
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "City map poster design",
+          "Phone and desktop wallpaper layouts",
+          "10 color themes and custom theme editor",
+          "Markers and route drawing",
+          "High-resolution PNG, JPEG and PDF export"
+        ]
+      }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://tiles.openfreemap.org" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
     />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='2.5' width='19' height='19' rx='4' fill='%230b111c' stroke='%235eb1d6' stroke-width='1.6'/%3E%3Cpath d='M6 16l4-8 3 5 2-3 3 6' stroke='%23e3b04b' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Bebas+Neue&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Kartograf — Xarita Poster va Wallpaper Yaratuvchi</h1>
+      <p>
+        Istalgan shahar xaritasidan bepul, yuqori sifatli poster va wallpaper yarating: 10 ta
+        rang mavzusi, print va social media formatlari, belgilar, marshrutlar va PNG/JPEG/PDF
+        eksport. Ilova ishlashi uchun JavaScript ni yoqing.
+      </p>
+      <p>
+        Kartograf is a free map poster and wallpaper creator. Design a custom city map print
+        with themes, markers and routes, then download it in high resolution. Please enable
+        JavaScript to use the app.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

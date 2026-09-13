@@ -63,6 +63,10 @@ export default function App() {
 
   return (
     <div className="app">
+      <h1 className="sr-only">
+        Kartograf — xarita poster va wallpaper yaratuvchi (free map poster &amp; wallpaper
+        creator)
+      </h1>
       <header className="topbar">
         <div className="brand">
           <IconLogo size={26} />
