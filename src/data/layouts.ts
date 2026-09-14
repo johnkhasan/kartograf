@@ -2,6 +2,33 @@ import type { Layout } from '../types';
 
 export const LAYOUTS: Layout[] = [
   {
+    id: 'phone-wallpaper',
+    name: 'Phone Wallpaper',
+    group: 'device',
+    sizeLabel: '1170 x 2532 px',
+    ratio: 1170 / 2532,
+    exportWidth: 1170,
+    exportHeight: 2532,
+  },
+  {
+    id: 'desktop-wallpaper',
+    name: 'Desktop Wallpaper',
+    group: 'device',
+    sizeLabel: '2560 x 1440 px',
+    ratio: 2560 / 1440,
+    exportWidth: 2560,
+    exportHeight: 1440,
+  },
+  {
+    id: 'desktop-4k',
+    name: 'Desktop 4K',
+    group: 'device',
+    sizeLabel: '3840 x 2160 px',
+    ratio: 3840 / 2160,
+    exportWidth: 3840,
+    exportHeight: 2160,
+  },
+  {
     id: 'a3-portrait',
     name: 'A3 Portrait',
     group: 'print',
@@ -82,38 +109,16 @@ export const LAYOUTS: Layout[] = [
     exportWidth: 1080,
     exportHeight: 1920,
   },
-  {
-    id: 'phone-wallpaper',
-    name: 'Phone Wallpaper',
-    group: 'social',
-    sizeLabel: '1170 x 2532 px',
-    ratio: 1170 / 2532,
-    exportWidth: 1170,
-    exportHeight: 2532,
-  },
-  {
-    id: 'desktop-wallpaper',
-    name: 'Desktop Wallpaper',
-    group: 'social',
-    sizeLabel: '2560 x 1440 px',
-    ratio: 2560 / 1440,
-    exportWidth: 2560,
-    exportHeight: 1440,
-  },
-  {
-    id: 'desktop-4k',
-    name: 'Desktop 4K',
-    group: 'social',
-    sizeLabel: '3840 x 2160 px',
-    ratio: 3840 / 2160,
-    exportWidth: 3840,
-    exportHeight: 2160,
-  },
 ];
 
 export function getLayout(id: string): Layout {
-  return LAYOUTS.find((l) => l.id === id) ?? LAYOUTS[1];
+  return (
+    LAYOUTS.find((l) => l.id === id) ?? LAYOUTS.find((l) => l.id === 'a4-portrait') ?? LAYOUTS[0]
+  );
 }
+
+/** Groups in the order they should appear in every layout picker. */
+export const LAYOUT_GROUPS = ['device', 'social', 'print'] as const;
 
 export const FONTS = [
   'Space Grotesk',

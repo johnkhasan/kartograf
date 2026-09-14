@@ -19,7 +19,7 @@ export interface Theme {
 export interface Layout {
   id: string;
   name: string;
-  group: 'print' | 'social';
+  group: 'device' | 'print' | 'social';
   /** physical size label, e.g. "21 x 29.7 cm" or "1080 x 1350 px" */
   sizeLabel: string;
   /** aspect ratio w/h */

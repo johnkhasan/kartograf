@@ -4,6 +4,7 @@ import { outputDims } from '../lib/export';
 import { useExport } from '../hooks/useExport';
 import { useT } from '../i18n';
 import { IconDownload } from './Icons';
+import LayoutPicker from './LayoutPicker';
 
 export default function ExportDialog() {
   const t = useT();
@@ -39,6 +40,9 @@ export default function ExportDialog() {
     <div className="modal-backdrop" onClick={() => !exporting && setExportDialogOpen(false)}>
       <div className="modal export-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modal-label">{t.exportDialogTitle}</div>
+
+        <div className="group-label">{t.layoutDeviceSection}</div>
+        <LayoutPicker disabled={exporting} />
 
         <div className="group-label">{t.exportQuality}</div>
         <div className="seg-row">

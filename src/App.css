@@ -899,6 +899,8 @@ body {
 
 .modal {
   width: 340px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
