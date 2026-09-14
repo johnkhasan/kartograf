@@ -241,6 +241,9 @@ export default function PosterPreview() {
 
   const pad = Math.round(w * FRAME_PAD);
   const bottomBand = Math.round(posterSize.h * FRAME_BOTTOM);
+  const mapRectStyle = framed
+    ? { top: pad, left: pad, right: pad, bottom: bottomBand }
+    : { inset: 0 };
 
   return (
     <div className="workspace" ref={wrapRef}>
@@ -252,22 +255,18 @@ export default function PosterPreview() {
           id={POSTER_MAP_ID}
           ref={mapContainerRef}
           className={'poster-map' + (drawingRoute ? ' drawing' : '')}
-          style={
-            framed
-              ? {
-                  top: pad,
-                  left: pad,
-                  right: pad,
-                  bottom: bottomBand,
-                  border: `1.5px solid ${theme.accent}`,
-                }
-              : { inset: 0 }
-          }
+          style={framed ? { ...mapRectStyle, border: `1.5px solid ${theme.accent}` } : mapRectStyle}
         />
 
         {mapLoading && (
-          <div className="map-loading" style={{ color: theme.text, borderColor: theme.accent }}>
-            {t.loadingMap}
+          <div
+            className="map-loading-overlay"
+            style={{ ...mapRectStyle, background: `${theme.bg}b3` }}
+          >
+            <div className="map-loading">
+              <span className="map-loading-spinner" style={{ borderTopColor: theme.accent }} />
+              <span style={{ color: theme.text }}>{t.loadingMap}</span>
+            </div>
           </div>
         )}
 
