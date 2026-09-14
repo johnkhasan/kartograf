@@ -900,7 +900,7 @@ body {
 .modal {
   width: 340px;
   max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -909,6 +909,28 @@ body {
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+
+/* scrollable body used when a modal's content can outgrow the viewport —
+   keeps the action buttons below it fixed in place instead of requiring a
+   scroll to reach them */
+.modal-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  margin: -4px -8px -4px -4px;
+  padding: 4px 8px 4px 4px;
+}
+
+.modal-footer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 .modal-logo {

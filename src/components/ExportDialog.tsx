@@ -41,55 +41,58 @@ export default function ExportDialog() {
       <div className="modal export-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modal-label">{t.exportDialogTitle}</div>
 
-        <div className="group-label">{t.layoutDeviceSection}</div>
-        <LayoutPicker disabled={exporting} />
+        <div className="modal-scroll">
+          <div className="group-label">{t.layoutDeviceSection}</div>
+          <LayoutPicker disabled={exporting} />
 
-        <div className="group-label">{t.exportQuality}</div>
-        <div className="seg-row">
-          {([1, 2, 3] as const).map((sc) => (
+          <div className="group-label">{t.exportQuality}</div>
+          <div className="seg-row">
+            {([1, 2, 3] as const).map((sc) => (
+              <button
+                key={sc}
+                className={'seg' + (settings.scale === sc ? ' active' : '')}
+                onClick={() => setSettings({ scale: sc })}
+                disabled={exporting}
+              >
+                {sc}x
+              </button>
+            ))}
+          </div>
+          <div className="kv">
+            <span className="kv-label">{t.outputSize}</span>
+            <span className="kv-value">{dims(settings.scale)}</span>
+          </div>
+
+          <div className="group-label">{t.format}</div>
+          <div className="seg-row">
+            {(['png', 'jpeg', 'pdf'] as const).map((f) => (
+              <button
+                key={f}
+                className={'seg' + (settings.format === f ? ' active' : '')}
+                onClick={() => setSettings({ format: f })}
+                disabled={exporting}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          {error && <div className="error-note">{error}</div>}
+          <div className="btn-row">
             <button
-              key={sc}
-              className={'seg' + (settings.scale === sc ? ' active' : '')}
-              onClick={() => setSettings({ scale: sc })}
+              className="btn btn-secondary"
+              onClick={() => setExportDialogOpen(false)}
               disabled={exporting}
             >
-              {sc}x
+              {t.cancel}
             </button>
-          ))}
-        </div>
-        <div className="kv">
-          <span className="kv-label">{t.outputSize}</span>
-          <span className="kv-value">{dims(settings.scale)}</span>
-        </div>
-
-        <div className="group-label">{t.format}</div>
-        <div className="seg-row">
-          {(['png', 'jpeg', 'pdf'] as const).map((f) => (
-            <button
-              key={f}
-              className={'seg' + (settings.format === f ? ' active' : '')}
-              onClick={() => setSettings({ format: f })}
-              disabled={exporting}
-            >
-              {f.toUpperCase()}
+            <button className="btn btn-primary" onClick={confirmDownload} disabled={exporting}>
+              <IconDownload size={15} />
+              {exporting ? stageText : t.download}
             </button>
-          ))}
-        </div>
-
-        {error && <div className="error-note">{error}</div>}
-
-        <div className="btn-row" style={{ marginTop: 8 }}>
-          <button
-            className="btn btn-secondary"
-            onClick={() => setExportDialogOpen(false)}
-            disabled={exporting}
-          >
-            {t.cancel}
-          </button>
-          <button className="btn btn-primary" onClick={confirmDownload} disabled={exporting}>
-            <IconDownload size={15} />
-            {exporting ? stageText : t.download}
-          </button>
+          </div>
         </div>
       </div>
     </div>
