@@ -95,6 +95,10 @@ const PERSIST_KEYS = [
   'uploadedMarkers',
   'lang',
   'modalOpen',
+  // so a page refresh right after opening a share link doesn't drop back
+  // into the full editor — the ?s= query param is stripped from the URL
+  // right after being applied, so a refresh has nothing else to go on
+  'viewMode',
 ] as const;
 
 type Snapshot = Pick<AppState, (typeof HISTORY_KEYS)[number]>;
