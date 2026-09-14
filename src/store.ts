@@ -34,6 +34,7 @@ export interface AppState {
   settings: ExportSettings;
   activePanel: PanelId | null;
   modalOpen: boolean;
+  exportDialogOpen: boolean;
   exporting: boolean;
   lang: Lang;
 
@@ -61,6 +62,7 @@ export interface AppState {
   setSettings: (patch: Partial<ExportSettings>) => void;
   setActivePanel: (panel: PanelId | null) => void;
   setModalOpen: (open: boolean) => void;
+  setExportDialogOpen: (open: boolean) => void;
   setExporting: (on: boolean) => void;
   setLang: (lang: Lang) => void;
 }
@@ -141,6 +143,7 @@ export const useStore = create<AppState>()(
         settings: { scale: 2, format: 'png' } as ExportSettings,
         activePanel: 'location' as PanelId | null,
         modalOpen: true,
+        exportDialogOpen: false,
         exporting: false,
         lang: 'uz' as Lang,
 
@@ -181,6 +184,7 @@ export const useStore = create<AppState>()(
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
         setActivePanel: (panel) => set({ activePanel: panel }),
         setModalOpen: (open) => set({ modalOpen: open }),
+        setExportDialogOpen: (open) => set({ exportDialogOpen: open }),
         setExporting: (on) => set({ exporting: on }),
         setLang: (lang) => set({ lang }),
       }),

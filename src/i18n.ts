@@ -71,6 +71,8 @@ const STRINGS = {
     stageSaving: 'Saqlanmoqda…',
     undoTip: 'Bekor qilish (Ctrl+Z)',
     redoTip: 'Qaytarish (Ctrl+Shift+Z)',
+    exportDialogTitle: 'EKSPORT SIFATINI TANLANG',
+    cancel: 'BEKOR QILISH',
   },
   en: {
     locationHint: 'Search for a city or place — the poster is built around it.',
@@ -141,6 +143,8 @@ const STRINGS = {
     stageSaving: 'Saving…',
     undoTip: 'Undo (Ctrl+Z)',
     redoTip: 'Redo (Ctrl+Shift+Z)',
+    exportDialogTitle: 'CHOOSE EXPORT QUALITY',
+    cancel: 'CANCEL',
   },
 } as const;
 

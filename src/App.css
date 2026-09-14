@@ -885,6 +885,14 @@ body {
   margin-top: 0;
 }
 
+.export-dialog .modal-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
 /* ---------- mobile action bar (hidden on desktop) ---------- */
 .mobile-bar {
   display: none;

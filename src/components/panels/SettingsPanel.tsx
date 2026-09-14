@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { getLayout } from '../../data/layouts';
+import { outputDims } from '../../lib/export';
 import { useT } from '../../i18n';
 
 export default function SettingsPanel() {
@@ -8,10 +9,8 @@ export default function SettingsPanel() {
   const t = useT();
 
   const dims = (scale: number) => {
-    const w = Math.round(layout.exportWidth * (scale / 2));
-    const h = Math.round(layout.exportHeight * (scale / 2));
-    const cap = Math.max(w, h) > 4096 ? 4096 / Math.max(w, h) : 1;
-    return `${Math.round(w * cap)} × ${Math.round(h * cap)} px`;
+    const { w, h } = outputDims(layout, scale);
+    return `${w} × ${h} px`;
   };
 
   return (

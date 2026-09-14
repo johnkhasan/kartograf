@@ -3,10 +3,10 @@ import Sidebar from './components/Sidebar';
 import PosterPreview from './components/PosterPreview';
 import SummaryPanel from './components/SummaryPanel';
 import LocationModal from './components/LocationModal';
+import ExportDialog from './components/ExportDialog';
 import { IconCrosshair, IconDownload, IconLogo, IconRedo, IconShare, IconUndo } from './components/Icons';
 import { useStore, undoHistory } from './store';
 import { decodeShare, shareUrl } from './lib/share';
-import { useExport } from './hooks/useExport';
 import { useT } from './i18n';
 import './App.css';
 
@@ -14,8 +14,8 @@ export default function App() {
   const t = useT();
   const lang = useStore((s) => s.lang);
   const setLang = useStore((s) => s.setLang);
+  const setExportDialogOpen = useStore((s) => s.setExportDialogOpen);
   const [copied, setCopied] = useState(false);
-  const { download, exporting } = useExport();
 
   // apply shared state from ?s=... once on load
   useEffect(() => {
@@ -110,12 +110,13 @@ export default function App() {
         <button className="btn btn-secondary" onClick={recenter}>
           <IconCrosshair size={15} /> {t.recenter}
         </button>
-        <button className="btn btn-primary" onClick={download} disabled={exporting}>
-          <IconDownload size={15} /> {exporting ? '…' : t.download}
+        <button className="btn btn-primary" onClick={() => setExportDialogOpen(true)}>
+          <IconDownload size={15} /> {t.download}
         </button>
       </div>
 
       <LocationModal />
+      <ExportDialog />
     </div>
   );
 }

@@ -37,6 +37,14 @@ export interface ExportJob {
 
 const MAX_EDGE = 4096;
 
+/** Final pixel dimensions for a layout at a given export scale (after the 4096px cap). */
+export function outputDims(layout: Layout, scale: number): { w: number; h: number } {
+  const w = Math.round(layout.exportWidth * (scale / 2));
+  const h = Math.round(layout.exportHeight * (scale / 2));
+  const cap = Math.max(w, h) > MAX_EDGE ? MAX_EDGE / Math.max(w, h) : 1;
+  return { w: Math.round(w * cap), h: Math.round(h * cap) };
+}
+
 export interface FrameRect {
   x: number;
   y: number;

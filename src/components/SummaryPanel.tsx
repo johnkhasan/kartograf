@@ -1,6 +1,5 @@
 import { useStore, useActiveTheme } from '../store';
 import { getLayout } from '../data/layouts';
-import { useExport } from '../hooks/useExport';
 import { useT } from '../i18n';
 import { IconCrosshair, IconDownload } from './Icons';
 
@@ -9,18 +8,6 @@ export default function SummaryPanel() {
   const theme = useActiveTheme();
   const layout = getLayout(s.layoutId);
   const t = useT();
-  const { download, exporting, stage, error } = useExport();
-
-  const stageText =
-    stage === 'preparing'
-      ? t.stagePreparing
-      : stage === 'rendering'
-        ? t.stageRendering
-        : stage === 'compositing'
-          ? t.stageCompositing
-          : stage === 'saving'
-            ? t.stageSaving
-            : t.download;
 
   const recenter = () => {
     s.setView([s.location.lng, s.location.lat], s.zoom);
@@ -65,11 +52,13 @@ export default function SummaryPanel() {
         <IconCrosshair size={15} /> {t.recenter}
       </button>
 
-      <button className="btn btn-primary btn-download" onClick={download} disabled={exporting}>
+      <button
+        className="btn btn-primary btn-download"
+        onClick={() => s.setExportDialogOpen(true)}
+      >
         <IconDownload size={16} />
-        {exporting ? stageText : t.download}
+        {t.download}
       </button>
-      {error && <div className="error-note">{error}</div>}
     </aside>
   );
 }

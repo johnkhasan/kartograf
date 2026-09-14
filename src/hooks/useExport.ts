@@ -12,9 +12,9 @@ export function useExport() {
   const [stage, setStage] = useState<ExportStage | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const download = async () => {
+  const download = async (): Promise<boolean> => {
     const s = useStore.getState();
-    if (s.exporting) return;
+    if (s.exporting) return false;
     setError(null);
     s.setExporting(true);
     try {
@@ -38,9 +38,11 @@ export function useExport() {
         settings: s.settings,
         onProgress: setStage,
       });
+      return true;
     } catch (e) {
       console.error(e);
       setError(getStrings(useStore.getState().lang).exportError);
+      return false;
     } finally {
       setStage(null);
       useStore.getState().setExporting(false);
