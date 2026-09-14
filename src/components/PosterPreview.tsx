@@ -6,7 +6,7 @@ import {
   type GeoJSONSource,
   type MapMouseEvent,
 } from 'maplibre-gl';
-import type { Feature } from 'geojson';
+import type { FeatureCollection } from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useStore, activeTheme, useActiveTheme } from '../store';
 import { buildMapStyle } from '../lib/mapStyle';
@@ -338,13 +338,25 @@ export default function PosterPreview() {
   );
 }
 
-function routeGeojson(coords: [number, number][]): Feature {
+/**
+ * A LineString needs at least 2 positions to be valid GeoJSON — feeding an
+ * empty-coordinates one to the source (e.g. right after the first drawn
+ * point) can wedge maplibre's internal geojson-vt worker so later, valid
+ * updates silently stop rendering. A FeatureCollection with zero features
+ * is always valid, so that's the "nothing to draw yet" state instead.
+ */
+function routeGeojson(coords: [number, number][]): FeatureCollection {
   return {
-    type: 'Feature',
-    properties: {},
-    geometry:
+    type: 'FeatureCollection',
+    features:
       coords.length >= 2
-        ? { type: 'LineString', coordinates: coords }
-        : { type: 'LineString', coordinates: [] },
+        ? [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: { type: 'LineString', coordinates: coords },
+            },
+          ]
+        : [],
   };
 }
