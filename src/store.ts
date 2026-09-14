@@ -104,48 +104,80 @@ function pick<K extends readonly (keyof AppState)[]>(s: AppState, keys: K) {
 let seq = 0;
 const genId = () => `${Date.now().toString(36)}${(++seq).toString(36)}`;
 
+/**
+ * Default data state — the same object seeds the store and is used by
+ * lib/share.ts to diff against, so a share link only carries what the user
+ * actually changed.
+ */
+export const DEFAULT_STATE: Pick<
+  AppState,
+  | 'location'
+  | 'center'
+  | 'zoom'
+  | 'themeId'
+  | 'customTheme'
+  | 'layoutId'
+  | 'styleOpts'
+  | 'layers'
+  | 'markers'
+  | 'uploadedMarkers'
+  | 'markerSize'
+  | 'markerColor'
+  | 'route'
+  | 'routeWidth'
+  | 'drawingRoute'
+  | 'settings'
+  | 'activePanel'
+  | 'modalOpen'
+  | 'exportDialogOpen'
+  | 'exporting'
+  | 'lang'
+> = {
+  location: { name: 'Tashkent', country: 'Uzbekistan', lat: 41.3123, lng: 69.2787 },
+  center: [69.2787, 41.3123],
+  zoom: 12,
+  themeId: 'midnight-blue',
+  customTheme: null,
+  layoutId: 'a4-portrait',
+  styleOpts: {
+    showOverlay: true,
+    showCity: true,
+    showCountry: true,
+    showCoords: true,
+    font: 'Space Grotesk',
+    customTitle: '',
+    customSubtitle: '',
+    frame: false,
+  },
+  layers: {
+    landcover: true,
+    buildings: true,
+    water: true,
+    parks: true,
+    roads: true,
+    rail: true,
+    aeroway: true,
+  },
+  markers: [],
+  uploadedMarkers: [],
+  markerSize: 32,
+  markerColor: null,
+  route: [],
+  routeWidth: 3,
+  drawingRoute: false,
+  settings: { scale: 2, format: 'png' },
+  activePanel: 'location',
+  modalOpen: true,
+  exportDialogOpen: false,
+  exporting: false,
+  lang: 'uz',
+};
+
 export const useStore = create<AppState>()(
   persist(
     temporal(
       (set) => ({
-        location: { name: 'Tashkent', country: 'Uzbekistan', lat: 41.3123, lng: 69.2787 },
-        center: [69.2787, 41.3123] as [number, number],
-        zoom: 12,
-        themeId: 'midnight-blue',
-        customTheme: null,
-        layoutId: 'a4-portrait',
-        styleOpts: {
-          showOverlay: true,
-          showCity: true,
-          showCountry: true,
-          showCoords: true,
-          font: 'Space Grotesk',
-          customTitle: '',
-          customSubtitle: '',
-          frame: false,
-        },
-        layers: {
-          landcover: true,
-          buildings: true,
-          water: true,
-          parks: true,
-          roads: true,
-          rail: true,
-          aeroway: true,
-        },
-        markers: [],
-        uploadedMarkers: [],
-        markerSize: 32,
-        markerColor: null,
-        route: [],
-        routeWidth: 3,
-        drawingRoute: false,
-        settings: { scale: 2, format: 'png' } as ExportSettings,
-        activePanel: 'location' as PanelId | null,
-        modalOpen: true,
-        exportDialogOpen: false,
-        exporting: false,
-        lang: 'uz' as Lang,
+        ...DEFAULT_STATE,
 
         setLocation: (loc) => set({ location: loc, center: [loc.lng, loc.lat] }),
         setView: (center, zoom) => set({ center, zoom }),
