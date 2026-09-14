@@ -84,7 +84,7 @@ export default function App() {
         <div className="brand">
           <IconLogo size={26} />
           <span className="brand-name">KARTOGRAF</span>
-          <span className="brand-tag">FREE MAP POSTER &amp; WALLPAPER CREATOR</span>
+          <span className="brand-tag">{t.brandTag}</span>
         </div>
         <div className="topbar-right">
           {isViewer ? (

@@ -9,7 +9,7 @@ export default function StylePanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">STYLE</h3>
+      <h3 className="panel-title">{t.panelStyle}</h3>
       <p className="panel-hint">{t.styleHint}</p>
 
       <div className="group-label">{t.posterText}</div>

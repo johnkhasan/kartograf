@@ -15,7 +15,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">SETTINGS</h3>
+      <h3 className="panel-title">{t.panelSettings}</h3>
       <p className="panel-hint">{t.settingsHint}</p>
 
       <div className="group-label">{t.exportQuality}</div>

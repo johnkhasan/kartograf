@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import { useT } from '../i18n';
 import type { PanelId } from '../types';
 import {
   IconClose,
@@ -20,17 +21,6 @@ import MarkersPanel from './panels/MarkersPanel';
 import RoutesPanel from './panels/RoutesPanel';
 import SettingsPanel from './panels/SettingsPanel';
 
-const TABS: Array<{ id: PanelId; label: string; icon: React.ReactNode }> = [
-  { id: 'location', label: 'LOCATION', icon: <IconLocation /> },
-  { id: 'theme', label: 'THEME', icon: <IconTheme /> },
-  { id: 'layout', label: 'LAYOUT', icon: <IconLayout /> },
-  { id: 'style', label: 'STYLE', icon: <IconType /> },
-  { id: 'layers', label: 'LAYERS', icon: <IconLayers /> },
-  { id: 'markers', label: 'MARKERS', icon: <IconMarker /> },
-  { id: 'routes', label: 'ROUTES', icon: <IconRoute /> },
-  { id: 'settings', label: 'SETTINGS', icon: <IconSettings /> },
-];
-
 const PANELS: Record<PanelId, React.ComponentType> = {
   location: LocationPanel,
   theme: ThemePanel,
@@ -44,20 +34,32 @@ const PANELS: Record<PanelId, React.ComponentType> = {
 
 export default function Sidebar() {
   const { activePanel, setActivePanel } = useStore();
+  const t = useT();
   const Panel = activePanel ? PANELS[activePanel] : null;
+
+  const TABS: Array<{ id: PanelId; label: string; icon: React.ReactNode }> = [
+    { id: 'location', label: t.location, icon: <IconLocation /> },
+    { id: 'theme', label: t.theme, icon: <IconTheme /> },
+    { id: 'layout', label: t.layout, icon: <IconLayout /> },
+    { id: 'style', label: t.panelStyle, icon: <IconType /> },
+    { id: 'layers', label: t.panelLayers, icon: <IconLayers /> },
+    { id: 'markers', label: t.markers, icon: <IconMarker /> },
+    { id: 'routes', label: t.panelRoutes, icon: <IconRoute /> },
+    { id: 'settings', label: t.panelSettings, icon: <IconSettings /> },
+  ];
 
   return (
     <div className="sidebar">
       <nav className="rail">
-        {TABS.map((t) => (
+        {TABS.map((tab) => (
           <button
-            key={t.id}
-            className={'rail-btn' + (activePanel === t.id ? ' active' : '')}
-            onClick={() => setActivePanel(activePanel === t.id ? null : t.id)}
-            title={t.label}
+            key={tab.id}
+            className={'rail-btn' + (activePanel === tab.id ? ' active' : '')}
+            onClick={() => setActivePanel(activePanel === tab.id ? null : tab.id)}
+            title={tab.label}
           >
-            {t.icon}
-            <span>{t.label}</span>
+            {tab.icon}
+            <span>{tab.label}</span>
           </button>
         ))}
       </nav>
@@ -67,7 +69,7 @@ export default function Sidebar() {
           <button
             className="panel-close"
             onClick={() => setActivePanel(null)}
-            title="Close panel"
+            title={t.closePanel}
           >
             <IconClose size={14} />
           </button>

@@ -10,18 +10,18 @@ export default function LayersPanel() {
   const meters = visibleMeters(zoom, center[1], 600);
 
   const rows: Array<{ key: keyof typeof layers; label: string }> = [
-    { key: 'landcover', label: 'Landcover' },
-    { key: 'buildings', label: 'Buildings' },
-    { key: 'water', label: 'Water' },
-    { key: 'parks', label: 'Parks' },
-    { key: 'roads', label: 'Roads' },
-    { key: 'rail', label: 'Rail' },
-    { key: 'aeroway', label: 'Aeroway' },
+    { key: 'landcover', label: t.colorLandcover },
+    { key: 'buildings', label: t.colorBuilding },
+    { key: 'water', label: t.colorWater },
+    { key: 'parks', label: t.colorPark },
+    { key: 'roads', label: t.layerRoads },
+    { key: 'rail', label: t.colorRail },
+    { key: 'aeroway', label: t.colorAeroway },
   ];
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">LAYERS</h3>
+      <h3 className="panel-title">{t.panelLayers}</h3>
       <p className="panel-hint">{t.layersHint}</p>
 
       {rows.map((r) => (

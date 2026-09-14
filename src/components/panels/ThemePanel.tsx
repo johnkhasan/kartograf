@@ -4,26 +4,29 @@ import { THEMES } from '../../data/themes';
 import { useT } from '../../i18n';
 import type { Theme } from '../../types';
 
-const COLOR_FIELDS: Array<{ key: keyof Theme; label: string }> = [
-  { key: 'bg', label: 'Background' },
-  { key: 'water', label: 'Water' },
-  { key: 'park', label: 'Parks' },
-  { key: 'landcover', label: 'Landcover' },
-  { key: 'building', label: 'Buildings' },
-  { key: 'roadMajor', label: 'Roads · major' },
-  { key: 'roadMid', label: 'Roads · mid' },
-  { key: 'roadMinor', label: 'Roads · minor' },
-  { key: 'rail', label: 'Rail' },
-  { key: 'aeroway', label: 'Aeroway' },
-  { key: 'text', label: 'Poster text' },
-  { key: 'accent', label: 'Accent' },
-];
-
 export default function ThemePanel() {
   const { themeId, customTheme, setTheme, setCustomTheme } = useStore();
   const active = useActiveTheme();
   const t = useT();
   const [editing, setEditing] = useState(false);
+
+  const COLOR_FIELDS: Array<{ key: keyof Theme; label: string }> = [
+    { key: 'bg', label: t.colorBg },
+    { key: 'water', label: t.colorWater },
+    { key: 'park', label: t.colorPark },
+    { key: 'landcover', label: t.colorLandcover },
+    { key: 'building', label: t.colorBuilding },
+    { key: 'roadMajor', label: t.colorRoadMajor },
+    { key: 'roadMid', label: t.colorRoadMid },
+    { key: 'roadMinor', label: t.colorRoadMinor },
+    { key: 'rail', label: t.colorRail },
+    { key: 'aeroway', label: t.colorAeroway },
+    { key: 'text', label: t.colorText },
+    { key: 'accent', label: t.colorAccent },
+  ];
+
+  const description =
+    themeId === 'custom' ? active.description : (t.themeDescriptions[themeId] ?? active.description);
 
   const startEditing = () => {
     if (themeId !== 'custom' || !customTheme) {
@@ -39,8 +42,10 @@ export default function ThemePanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">THEME: {active.name.toUpperCase()}</h3>
-      <p className="panel-hint">{active.description}</p>
+      <h3 className="panel-title">
+        {t.theme}: {active.name.toUpperCase()}
+      </h3>
+      <p className="panel-hint">{description}</p>
 
       <button className="btn btn-secondary" onClick={editing ? () => setEditing(false) : startEditing}>
         {editing ? '← ' + t.theme : t.customize}

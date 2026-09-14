@@ -1,18 +1,22 @@
 import { useStore } from '../../store';
 import { LAYOUTS, getLayout } from '../../data/layouts';
+import { useT } from '../../i18n';
 
 export default function LayoutPanel() {
   const { layoutId, setLayout } = useStore();
   const active = getLayout(layoutId);
+  const t = useT();
   const groups: Array<{ key: 'print' | 'social'; label: string }> = [
-    { key: 'print', label: 'PRINT' },
-    { key: 'social', label: 'SOCIAL MEDIA' },
+    { key: 'print', label: t.printGroup },
+    { key: 'social', label: t.socialGroup },
   ];
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">LAYOUT: {active.name.toUpperCase()}</h3>
-      <p className="panel-hint">Poster o‘lchami va nisbati. Print — bosma, Social — ekran uchun.</p>
+      <h3 className="panel-title">
+        {t.layout}: {active.name.toUpperCase()}
+      </h3>
+      <p className="panel-hint">{t.layoutHint}</p>
 
       {groups.map((g) => (
         <div key={g.key}>

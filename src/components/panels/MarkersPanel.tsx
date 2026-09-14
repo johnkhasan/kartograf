@@ -27,6 +27,14 @@ export default function MarkersPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const color = markerColor ?? theme.accent;
   const ids = Object.keys(MARKER_ICONS) as MarkerIconId[];
+  const markerLabels: Record<MarkerIconId, string> = {
+    pin: t.markerPin,
+    heart: t.markerHeart,
+    home: t.markerHome,
+    star: t.markerStar,
+    circle: t.markerCircle,
+    square: t.markerSquare,
+  };
 
   const onUpload = async (file: File) => {
     const dataUrl = await downscale(file, UPLOAD_MAX_PX);
@@ -37,7 +45,7 @@ export default function MarkersPanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">MARKERS</h3>
+      <h3 className="panel-title">{t.markers}</h3>
       <p className="panel-hint">{t.markersHint}</p>
 
       <div className="group-label">{t.markerIcons}</div>
@@ -46,7 +54,7 @@ export default function MarkersPanel() {
           <button
             key={id}
             className="marker-btn"
-            title={MARKER_ICONS[id].label}
+            title={markerLabels[id]}
             onClick={() => addMarker(id, center[0], center[1])}
             dangerouslySetInnerHTML={{ __html: markerSvg(id, color, 26) }}
           />
@@ -64,7 +72,7 @@ export default function MarkersPanel() {
             />
             <button
               className="upload-del"
-              title="Delete"
+              title={t.deleteLabel}
               onClick={() => removeUploadedMarker(u.id)}
             >
               ×

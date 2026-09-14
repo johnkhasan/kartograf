@@ -15,7 +15,7 @@ export default function RoutesPanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">ROUTES</h3>
+      <h3 className="panel-title">{t.panelRoutes}</h3>
       <p className="panel-hint">{t.routesHint}</p>
 
       <button

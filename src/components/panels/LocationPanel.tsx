@@ -62,7 +62,7 @@ export default function LocationPanel() {
 
   return (
     <div className="panel-body">
-      <h3 className="panel-title">LOCATION</h3>
+      <h3 className="panel-title">{t.location}</h3>
       <p className="panel-hint">{t.locationHint}</p>
 
       <div className="search-box">

@@ -26,7 +26,7 @@ export default function SummaryPanel() {
         </div>
         <div>
           <div className="kv-label">{t.theme}</div>
-          <div className="kv-value">{theme.name}</div>
+          <div className="kv-value">{s.themeId === 'custom' ? t.customTheme : theme.name}</div>
         </div>
         <div>
           <div className="kv-label">{t.layout}</div>
