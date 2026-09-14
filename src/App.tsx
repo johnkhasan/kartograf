@@ -6,7 +6,7 @@ import LocationModal from './components/LocationModal';
 import ExportDialog from './components/ExportDialog';
 import { IconCrosshair, IconDownload, IconLogo, IconRedo, IconShare, IconUndo } from './components/Icons';
 import { useStore, undoHistory } from './store';
-import { decodeShare, shareUrl } from './lib/share';
+import { decodeShare, shortShareUrl } from './lib/share';
 import { useT } from './i18n';
 import './App.css';
 
@@ -16,6 +16,7 @@ export default function App() {
   const setLang = useStore((s) => s.setLang);
   const setExportDialogOpen = useStore((s) => s.setExportDialogOpen);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   // apply shared state from ?s=... once on load
   useEffect(() => {
@@ -46,13 +47,20 @@ export default function App() {
   }, []);
 
   const share = async () => {
+    if (sharing) return;
+    setSharing(true);
     try {
-      await navigator.clipboard.writeText(shareUrl(useStore.getState()));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard unavailable — show the URL via prompt as fallback
-      window.prompt('URL:', shareUrl(useStore.getState()));
+      const url = await shortShareUrl(useStore.getState());
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // clipboard unavailable — show the URL via prompt as fallback
+        window.prompt('URL:', url);
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -80,8 +88,8 @@ export default function App() {
           <button className="icon-btn" title={t.redoTip} onClick={() => undoHistory().redo()}>
             <IconRedo size={15} />
           </button>
-          <button className="topbar-btn" onClick={share}>
-            <IconShare size={13} /> {copied ? t.copied : t.share}
+          <button className="topbar-btn" onClick={share} disabled={sharing}>
+            <IconShare size={13} /> {copied ? t.copied : sharing ? '…' : t.share}
           </button>
           <div className="lang-toggle">
             <button

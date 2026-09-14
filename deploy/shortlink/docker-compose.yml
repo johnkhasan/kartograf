@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: shortlink-app
+    restart: unless-stopped
+    environment:
+      TARGET_ORIGIN: https://map.javohir.ru
+      ALLOWED_ORIGINS: https://map.javohir.ru
+    volumes:
+      - shortlink_data:/data
+
+volumes:
+  shortlink_data:
