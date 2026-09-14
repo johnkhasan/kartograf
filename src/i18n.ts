@@ -73,6 +73,8 @@ const STRINGS = {
     redoTip: 'Qaytarish (Ctrl+Shift+Z)',
     exportDialogTitle: 'EKSPORT SIFATINI TANLANG',
     cancel: 'BEKOR QILISH',
+    edit: 'TAHRIRLASH',
+    viewerHint: 'Bu — ulashilgan poster. Tahrirlash uchun yuqoridagi tugmani bosing.',
   },
   en: {
     locationHint: 'Search for a city or place — the poster is built around it.',
@@ -145,6 +147,8 @@ const STRINGS = {
     redoTip: 'Redo (Ctrl+Shift+Z)',
     exportDialogTitle: 'CHOOSE EXPORT QUALITY',
     cancel: 'CANCEL',
+    edit: 'EDIT',
+    viewerHint: 'This is a shared poster. Click Edit above to customize it.',
   },
 } as const;
 

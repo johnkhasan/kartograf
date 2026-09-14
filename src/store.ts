@@ -37,6 +37,9 @@ export interface AppState {
   exportDialogOpen: boolean;
   exporting: boolean;
   lang: Lang;
+  /** 'view' right after opening someone else's share link — poster + Download
+   *  only, no editing tools, until "Edit" is clicked. Not persisted. */
+  viewMode: 'edit' | 'view';
 
   setLocation: (loc: LocationInfo) => void;
   setView: (center: [number, number], zoom: number) => void;
@@ -65,6 +68,7 @@ export interface AppState {
   setExportDialogOpen: (open: boolean) => void;
   setExporting: (on: boolean) => void;
   setLang: (lang: Lang) => void;
+  setViewMode: (mode: 'edit' | 'view') => void;
 }
 
 /** Fields captured by undo/redo history (design decisions, not view/UI state). */
@@ -178,6 +182,7 @@ export const useStore = create<AppState>()(
     temporal(
       (set) => ({
         ...DEFAULT_STATE,
+        viewMode: 'edit',
 
         setLocation: (loc) => set({ location: loc, center: [loc.lng, loc.lat] }),
         setView: (center, zoom) => set({ center, zoom }),
@@ -219,6 +224,7 @@ export const useStore = create<AppState>()(
         setExportDialogOpen: (open) => set({ exportDialogOpen: open }),
         setExporting: (on) => set({ exporting: on }),
         setLang: (lang) => set({ lang }),
+        setViewMode: (mode) => set({ viewMode: mode }),
       }),
       {
         partialize: (s) => pick(s, HISTORY_KEYS) as Snapshot,

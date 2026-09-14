@@ -45,9 +45,11 @@ export default function PosterPreview() {
     route,
     routeWidth,
     drawingRoute,
+    viewMode,
     moveMarker,
     removeMarker,
   } = useStore();
+  const readOnly = viewMode === 'view';
 
   const theme = useActiveTheme();
   const layout = getLayout(layoutId);
@@ -200,11 +202,15 @@ export default function PosterPreview() {
       if (!mk) {
         const el = document.createElement('div');
         el.className = 'poster-marker';
+        // reads fresh state instead of closing over `readOnly` so a later
+        // Edit click (which re-creates nothing, just toggles draggable
+        // below) still un-blocks removal on this same marker instance
         el.addEventListener('dblclick', (ev) => {
           ev.stopPropagation();
+          if (useStore.getState().viewMode === 'view') return;
           removeMarker(m.id);
         });
-        mk = new MLMarker({ element: el, draggable: true })
+        mk = new MLMarker({ element: el, draggable: !readOnly })
           .setLngLat([m.lng, m.lat])
           .addTo(map);
         mk.on('dragend', () => {
@@ -217,6 +223,7 @@ export default function PosterPreview() {
         if (Math.abs(cur.lng - m.lng) > 1e-9 || Math.abs(cur.lat - m.lat) > 1e-9) {
           mk.setLngLat([m.lng, m.lat]);
         }
+        mk.setDraggable(!readOnly);
       }
       const el = mk.getElement();
       if (m.icon.startsWith('up:')) {
@@ -228,7 +235,16 @@ export default function PosterPreview() {
         el.innerHTML = markerSvg(m.icon as MarkerIconId, color, markerSize);
       }
     }
-  }, [markers, uploadedMarkers, markerSize, markerColor, theme.accent, moveMarker, removeMarker]);
+  }, [
+    markers,
+    uploadedMarkers,
+    markerSize,
+    markerColor,
+    theme.accent,
+    readOnly,
+    moveMarker,
+    removeMarker,
+  ]);
 
   const w = posterSize.w;
   const framed = styleOpts.frame;

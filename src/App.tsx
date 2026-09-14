@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import PosterPreview from './components/PosterPreview';
 import SummaryPanel from './components/SummaryPanel';
+import ViewerPanel from './components/ViewerPanel';
 import LocationModal from './components/LocationModal';
 import ExportDialog from './components/ExportDialog';
-import { IconCrosshair, IconDownload, IconLogo, IconRedo, IconShare, IconUndo } from './components/Icons';
+import { IconCrosshair, IconDownload, IconEdit, IconLogo, IconRedo, IconShare, IconUndo } from './components/Icons';
 import { useStore, undoHistory } from './store';
 import { decodeShare, shortShareUrl } from './lib/share';
 import { useT } from './i18n';
@@ -15,16 +16,20 @@ export default function App() {
   const lang = useStore((s) => s.lang);
   const setLang = useStore((s) => s.setLang);
   const setExportDialogOpen = useStore((s) => s.setExportDialogOpen);
+  const viewMode = useStore((s) => s.viewMode);
+  const setViewMode = useStore((s) => s.setViewMode);
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const isViewer = viewMode === 'view';
 
-  // apply shared state from ?s=... once on load
+  // apply shared state from ?s=... once on load — recipients land in a
+  // read-only viewer (poster + Download only) until they choose to Edit
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('s');
     if (!code) return;
     const data = decodeShare(code);
     if (data) {
-      useStore.setState({ ...data, modalOpen: false });
+      useStore.setState({ ...data, modalOpen: false, viewMode: 'view' });
       undoHistory().clear();
     }
     window.history.replaceState(null, '', window.location.pathname);
@@ -82,15 +87,23 @@ export default function App() {
           <span className="brand-tag">FREE MAP POSTER &amp; WALLPAPER CREATOR</span>
         </div>
         <div className="topbar-right">
-          <button className="icon-btn" title={t.undoTip} onClick={() => undoHistory().undo()}>
-            <IconUndo size={15} />
-          </button>
-          <button className="icon-btn" title={t.redoTip} onClick={() => undoHistory().redo()}>
-            <IconRedo size={15} />
-          </button>
-          <button className="topbar-btn" onClick={share} disabled={sharing}>
-            <IconShare size={13} /> {copied ? t.copied : sharing ? '…' : t.share}
-          </button>
+          {isViewer ? (
+            <button className="topbar-btn topbar-btn-accent" onClick={() => setViewMode('edit')}>
+              <IconEdit size={13} /> {t.edit}
+            </button>
+          ) : (
+            <>
+              <button className="icon-btn" title={t.undoTip} onClick={() => undoHistory().undo()}>
+                <IconUndo size={15} />
+              </button>
+              <button className="icon-btn" title={t.redoTip} onClick={() => undoHistory().redo()}>
+                <IconRedo size={15} />
+              </button>
+              <button className="topbar-btn" onClick={share} disabled={sharing}>
+                <IconShare size={13} /> {copied ? t.copied : sharing ? '…' : t.share}
+              </button>
+            </>
+          )}
           <div className="lang-toggle">
             <button
               className={lang === 'uz' ? 'active' : ''}
@@ -109,15 +122,17 @@ export default function App() {
       </header>
 
       <main className="layout-main">
-        <Sidebar />
+        {!isViewer && <Sidebar />}
         <PosterPreview />
-        <SummaryPanel />
+        {isViewer ? <ViewerPanel /> : <SummaryPanel />}
       </main>
 
       <div className="mobile-bar">
-        <button className="btn btn-secondary" onClick={recenter}>
-          <IconCrosshair size={15} /> {t.recenter}
-        </button>
+        {!isViewer && (
+          <button className="btn btn-secondary" onClick={recenter}>
+            <IconCrosshair size={15} /> {t.recenter}
+          </button>
+        )}
         <button className="btn btn-primary" onClick={() => setExportDialogOpen(true)}>
           <IconDownload size={15} /> {t.download}
         </button>

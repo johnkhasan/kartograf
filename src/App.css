@@ -133,6 +133,17 @@ body {
   border-color: var(--accent);
 }
 
+.topbar-btn-accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06121c;
+  font-weight: 700;
+}
+
+.topbar-btn-accent:hover {
+  filter: brightness(1.1);
+}
+
 .lang-toggle {
   display: flex;
   border: 1px solid var(--border);
@@ -847,6 +858,10 @@ body {
 
 .btn-download {
   margin-top: auto;
+}
+
+.viewer-panel .btn-download {
+  margin-top: 0;
 }
 
 .error-note {
