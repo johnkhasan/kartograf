@@ -42,6 +42,10 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* dvh tracks the browser's actual visible area, so content isn't sized
+     against the taller "chrome collapsed" height mobile Safari reports
+     for 100vh, which pushed the bottom bar off-screen until you scrolled */
+  height: 100dvh;
 }
 
 /* ---------- top bar ---------- */
@@ -894,12 +898,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
   z-index: 50;
 }
 
 .modal {
   width: 340px;
-  max-height: calc(100vh - 48px);
+  /* % (not vh) so it's measured against modal-backdrop's actual fixed,
+     already-safe-area-padded box instead of the taller "chrome collapsed"
+     100vh mobile Safari reports, which cut off the footer buttons */
+  max-height: 100%;
   overflow: hidden;
   background: var(--panel);
   border: 1px solid var(--border);
