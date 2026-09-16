@@ -11,6 +11,15 @@ export const LAYOUTS: Layout[] = [
     exportHeight: 2532,
   },
   {
+    id: 'tablet-wallpaper',
+    name: 'Tablet Wallpaper',
+    group: 'device',
+    sizeLabel: '1640 x 2360 px',
+    ratio: 1640 / 2360,
+    exportWidth: 1640,
+    exportHeight: 2360,
+  },
+  {
     id: 'desktop-wallpaper',
     name: 'Desktop Wallpaper',
     group: 'device',
