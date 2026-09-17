@@ -89,7 +89,7 @@ export default function App() {
         <div className="topbar-right">
           {isViewer ? (
             <button className="topbar-btn topbar-btn-accent" onClick={() => setViewMode('edit')}>
-              <IconEdit size={13} /> {t.edit}
+              <IconEdit size={13} /> <span className="topbar-btn-label">{t.edit}</span>
             </button>
           ) : (
             <>
@@ -100,7 +100,8 @@ export default function App() {
                 <IconRedo size={15} />
               </button>
               <button className="topbar-btn" onClick={share} disabled={sharing}>
-                <IconShare size={13} /> {copied ? t.copied : sharing ? '…' : t.share}
+                <IconShare size={13} />{' '}
+                <span className="topbar-btn-label">{copied ? t.copied : sharing ? '…' : t.share}</span>
               </button>
             </>
           )}
