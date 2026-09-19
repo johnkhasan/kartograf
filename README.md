@@ -1,9 +1,9 @@
 # Kartograf — Map Poster & Wallpaper Creator
 
-[terraink.app](https://terraink.app/) ga alternativa: xohlagan shahar/joyning
-uslubli xarita posterini yasab, yuqori sifatli PNG/JPEG holida yuklab olish.
-React + TypeScript + MapLibre GL bilan yozilgan, bepul OpenFreeMap vektor
-tile'lari va OpenStreetMap ma'lumotlaridan foydalanadi.
+Xohlagan shahar/joyning uslubli xarita posterini yasab, yuqori sifatli
+PNG/JPEG holida yuklab olish. React + TypeScript + MapLibre GL bilan
+yozilgan, bepul OpenFreeMap vektor tile'lari va OpenStreetMap
+ma'lumotlaridan foydalanadi.
 
 ## Imkoniyatlar
 
