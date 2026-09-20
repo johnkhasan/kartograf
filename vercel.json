@@ -16,10 +16,5 @@
       ],
       "destination": "/api/preview"
     }
-  ],
-  "functions": {
-    "api/og.tsx": {
-      "includeFiles": "node_modules/@vercel/og/dist/**"
-    }
-  }
+  ]
 }
