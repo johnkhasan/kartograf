@@ -3,6 +3,17 @@ import type { Lang } from './types';
 
 const STRINGS = {
   uz: {
+    panelTemplates: 'SHABLON',
+    templatesHint:
+      "Tayyor uslub — bir tegishda mavzu, format va matn joylashuvi qo‘yiladi. Joyingiz va belgilaringizga tegmaydi.",
+    templateLabels: {
+      couple: { name: 'SEVISHGANLAR', hint: 'Ikki joy, yurak va masofa' },
+      birthplace: { name: 'TUG‘ILGAN JOY', hint: 'Klassik ramka, iliq qog‘oz' },
+      wedding: { name: 'TO‘Y', hint: 'Qora ramka, nafis shrift' },
+      wallpaper: { name: 'WALLPAPER', hint: 'Telefon ekrani uchun' },
+      minimal: { name: 'MINIMAL', hint: 'Faqat yo‘llar va shahar nomi' },
+      route: { name: 'MARSHRUT', hint: 'Gorizontal, yo‘l chizish uchun' },
+    } as Record<string, { name: string; hint: string }>,
     locationHint: "Shahar yoki joy nomini qidiring — poster shu joy atrofida quriladi.",
     searchPlaceholder: 'Shahar yoki joy nomi…',
     getMyLocation: '⊕ JOYIMNI ANIQLASH',
@@ -105,6 +116,8 @@ const STRINGS = {
     undoTip: 'Bekor qilish (Ctrl+Z)',
     redoTip: 'Qaytarish (Ctrl+Shift+Z)',
     exportDialogTitle: 'EKSPORT SIFATINI TANLANG',
+    shareImage: 'RASMNI ULASHISH',
+    shareReady: 'TAYYOR — ULASHISH',
     cancel: 'BEKOR QILISH',
     edit: 'TAHRIRLASH',
     viewerHint: 'Bu — ulashilgan poster. Tahrirlash uchun yuqoridagi tugmani bosing.',
@@ -153,6 +166,17 @@ const STRINGS = {
     } as Record<string, string>,
   },
   en: {
+    panelTemplates: 'TEMPLATE',
+    templatesHint:
+      'A ready-made look — sets the theme, format and text placement in one tap. Your location and markers are left alone.',
+    templateLabels: {
+      couple: { name: 'COUPLE', hint: 'Two places, a heart and the distance' },
+      birthplace: { name: 'BIRTHPLACE', hint: 'Classic frame, warm paper' },
+      wedding: { name: 'WEDDING', hint: 'Black frame, elegant type' },
+      wallpaper: { name: 'WALLPAPER', hint: 'Sized for a phone screen' },
+      minimal: { name: 'MINIMAL', hint: 'Just roads and the city name' },
+      route: { name: 'ROUTE', hint: 'Landscape, for drawing a path' },
+    } as Record<string, { name: string; hint: string }>,
     locationHint: 'Search for a city or place — the poster is built around it.',
     searchPlaceholder: 'Type a city or place…',
     getMyLocation: '⊕ GET MY LOCATION',
@@ -254,6 +278,8 @@ const STRINGS = {
     undoTip: 'Undo (Ctrl+Z)',
     redoTip: 'Redo (Ctrl+Shift+Z)',
     exportDialogTitle: 'CHOOSE EXPORT QUALITY',
+    shareImage: 'SHARE IMAGE',
+    shareReady: 'READY — SHARE',
     cancel: 'CANCEL',
     edit: 'EDIT',
     viewerHint: 'This is a shared poster. Click Edit above to customize it.',

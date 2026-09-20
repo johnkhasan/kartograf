@@ -128,6 +128,7 @@ export interface ExportSettings {
 export type ExportStage = 'preparing' | 'rendering' | 'compositing' | 'saving';
 
 export type PanelId =
+  | 'templates'
   | 'location'
   | 'theme'
   | 'layout'

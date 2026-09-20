@@ -1557,3 +1557,54 @@ body {
   letter-spacing: 0.12em;
   color: var(--accent);
 }
+
+/* ---------- template gallery ---------- */
+.tpl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel2);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tpl-card:hover {
+  border-color: var(--accent);
+}
+
+.tpl-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.tpl-thumb {
+  width: 100%;
+  border-radius: 5px;
+  /* the format's own proportions, so the card shows what it will produce */
+  max-height: 104px;
+  align-self: center;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.tpl-name {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.tpl-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-dim);
+}

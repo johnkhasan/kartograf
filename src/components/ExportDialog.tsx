@@ -1,16 +1,17 @@
 import { useStore } from '../store';
 import { getLayout } from '../data/layouts';
 import { outputDims } from '../lib/export';
-import { useExport } from '../hooks/useExport';
+import { canShareFiles, useExport } from '../hooks/useExport';
 import { useT } from '../i18n';
-import { IconDownload } from './Icons';
+import { IconDownload, IconShare } from './Icons';
 import LayoutPicker from './LayoutPicker';
 
 export default function ExportDialog() {
   const t = useT();
   const { exportDialogOpen, setExportDialogOpen, settings, setSettings, layoutId } = useStore();
   const layout = getLayout(layoutId);
-  const { download, exporting, stage, error } = useExport();
+  const { download, shareImage, shareReady, pendingShare, exporting, stage, error } = useExport();
+  const shareable = canShareFiles();
 
   if (!exportDialogOpen) return null;
 
@@ -34,6 +35,14 @@ export default function ExportDialog() {
     const ok = await download();
     // keep the dialog open on failure so the error message stays visible
     if (ok) setExportDialogOpen(false);
+  };
+
+  const confirmShare = async () => {
+    if (pendingShare) {
+      if (await shareReady()) setExportDialogOpen(false);
+      return;
+    }
+    if ((await shareImage()) === 'shared') setExportDialogOpen(false);
   };
 
   return (
@@ -80,6 +89,16 @@ export default function ExportDialog() {
 
         <div className="modal-footer">
           {error && <div className="error-note">{error}</div>}
+          {shareable && (
+            <button
+              className={'btn ' + (pendingShare ? 'btn-primary' : 'btn-secondary')}
+              onClick={confirmShare}
+              disabled={exporting}
+            >
+              <IconShare size={14} />
+              {exporting ? stageText : pendingShare ? t.shareReady : t.shareImage}
+            </button>
+          )}
           <div className="btn-row">
             <button
               className="btn btn-secondary"

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { temporal } from 'zundo';
 import { getTheme } from './data/themes';
+import type { Template } from './data/templates';
 import type {
   CoupleState,
   CouplePoint,
@@ -65,6 +66,7 @@ export interface AppState {
   clearRoute: () => void;
   setRouteWidth: (w: number) => void;
   setDrawingRoute: (on: boolean) => void;
+  applyTemplate: (tpl: Template) => void;
   setCouple: (patch: Partial<CoupleState>) => void;
   setCouplePoint: (which: 'a' | 'b', point: CouplePoint | null) => void;
   setSettings: (patch: Partial<ExportSettings>) => void;
@@ -245,6 +247,16 @@ export const useStore = create<AppState>()(
         clearRoute: () => set({ route: [] }),
         setRouteWidth: (w) => set({ routeWidth: w }),
         setDrawingRoute: (on) => set({ drawingRoute: on }),
+        // one set() so a template lands as a single undo step, and so the
+        // map restyles once instead of per field
+        applyTemplate: (tpl) =>
+          set((s) => ({
+            themeId: tpl.themeId,
+            layoutId: tpl.layoutId,
+            styleOpts: { ...s.styleOpts, ...tpl.style },
+            layers: { ...s.layers, ...tpl.layers },
+            couple: { ...s.couple, ...tpl.couple },
+          })),
         setCouple: (patch) => set((s) => ({ couple: { ...s.couple, ...patch } })),
         setCouplePoint: (which, point) =>
           set((s) => ({ couple: { ...s.couple, [which]: point } })),

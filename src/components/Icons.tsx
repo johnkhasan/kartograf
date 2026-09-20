@@ -126,6 +126,15 @@ export const IconShare = (p: IconProps) => (
   </svg>
 );
 
+export const IconTemplate = (p: IconProps) => (
+  <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="3" width="7.5" height="7.5" rx="1.4" />
+    <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.4" />
+    <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.4" />
+    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.4" />
+  </svg>
+);
+
 export const IconChevronDown = (p: IconProps) => (
   <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="5 9 12 16 19 9" />

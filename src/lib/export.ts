@@ -35,6 +35,8 @@ export interface ExportJob {
   routeWidth: number;
   couple: CoupleState;
   settings: ExportSettings;
+  /** 'download' saves the file; 'file' hands it back instead, for sharing */
+  deliver?: 'download' | 'file';
   onProgress?: (stage: ExportStage) => void;
 }
 
@@ -78,7 +80,7 @@ export function frameRect(
   return { x: pad, y: top, w: w - pad * 2, h: h - top - bottom };
 }
 
-export async function exportPoster(job: ExportJob): Promise<void> {
+export async function exportPoster(job: ExportJob): Promise<File | null> {
   const { layout, theme, settings, onProgress } = job;
   onProgress?.('preparing');
 
@@ -194,19 +196,26 @@ export async function exportPoster(job: ExportJob): Promise<void> {
         compress: true,
       });
       pdf.addImage(out.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, w, h);
+      if (job.deliver === 'file') {
+        return new File([pdf.output('blob')], `${base}.pdf`, { type: 'application/pdf' });
+      }
       pdf.save(`${base}.pdf`);
-      return;
+      return null;
     }
 
     const mime = settings.format === 'jpeg' ? 'image/jpeg' : 'image/png';
     const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, mime, 0.92));
     if (!blob) throw new Error('Canvas export failed');
 
+    const name = `${base}.${settings.format === 'jpeg' ? 'jpg' : 'png'}`;
+    if (job.deliver === 'file') return new File([blob], name, { type: mime });
+
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${base}.${settings.format === 'jpeg' ? 'jpg' : 'png'}`;
+    a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return null;
   } finally {
     map.remove();
     container.remove();
