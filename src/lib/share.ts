@@ -4,6 +4,7 @@ import {
   COLLAGE_CELL_KEYS,
   COLLAGE_KEYS,
   COUPLE_KEYS,
+  STARMAP_KEYS,
   COUPLE_POINT_KEYS,
   LAYER_KEYS,
   LOCATION_KEYS,
@@ -29,6 +30,7 @@ const SHARE_KEYS = [
   'routeWidth',
   'couple',
   'collage',
+  'starmap',
   'settings',
 ] as const;
 
@@ -133,6 +135,9 @@ function packShare(s: AppState): Record<string, unknown> {
   }
   if (Object.keys(collageDiff).length) packed[TOP_KEYS.collage] = collageDiff;
 
+  const skyDiff = diffObject(s.starmap, DEFAULT_STATE.starmap, STARMAP_KEYS);
+  if (Object.keys(skyDiff).length) packed[TOP_KEYS.starmap] = skyDiff;
+
   // only built-in icon markers survive a share link; ids are regenerated on load
   const markers = s.markers.filter((m) => !m.icon.startsWith('up:'));
   if (markers.length) {
@@ -181,6 +186,12 @@ function unpackShare(packed: Record<string, unknown>): Partial<ShareState> {
         };
       }) as unknown as AppState['collage']['cells'];
       out.collage = collage;
+    } else if (key === 'starmap') {
+      out.starmap = undiffObject(
+        value as Record<string, unknown>,
+        DEFAULT_STATE.starmap,
+        STARMAP_KEYS
+      );
     } else if (key === 'couple') {
       const couple = undiffObject(
         value as Record<string, unknown>,

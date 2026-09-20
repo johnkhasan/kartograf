@@ -13,6 +13,7 @@ import { buildMapStyle } from '../lib/mapStyle';
 import { applyCoupleLayers } from '../lib/couple';
 import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from '../lib/posterText';
 import CollageMaps, { collageGeometry } from './CollageMaps';
+import { drawSky, loadSky } from '../lib/sky';
 import { borderRules, grainSize, grainTile } from '../lib/grain';
 import { markerSvg } from '../data/markerIcons';
 import { FRAME_PAD, FRAME_BOTTOM } from '../lib/export';
@@ -26,6 +27,7 @@ export { POSTER_MAP_ID };
 export default function PosterPreview() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const skyRef = useRef<HTMLCanvasElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const domMarkersRef = useRef<Map<string, MLMarker>>(new Map());
   const applyCoupleRef = useRef<() => void>(() => {});
@@ -53,6 +55,7 @@ export default function PosterPreview() {
     drawingRoute,
     couple,
     collage,
+    starmap,
     viewMode,
     moveMarker,
     removeMarker,
@@ -375,9 +378,34 @@ export default function PosterPreview() {
   // a collage replaces the single map entirely: its panels carry their own
   // places, so markers, routes and the couple line have nothing to sit on
   const asCollage = collage.enabled && collage.cells.length >= 2;
-  const metrics = posterTextMetrics(styleOpts, w);
+  // the sky takes the map's place entirely — it is a different poster, not a
+  // layer over one
+  const asSky = starmap.enabled;
 
-  const lines = posterLines({ styleOpts, location, couple, collage });
+  // ---- star chart
+  useEffect(() => {
+    if (!asSky) return;
+    let cancelled = false;
+    void loadSky().then((data) => {
+      const canvas = skyRef.current;
+      if (cancelled || !data || !canvas) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(dpr, dpr);
+      drawSky(ctx, data, { theme, state: starmap }, location.lat, location.lng, rect.width, rect.height);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [asSky, starmap, theme, location.lat, location.lng, posterSize, styleOpts.frame]);
+
+
+  const lines = posterLines({ styleOpts, location, couple, collage, starmap });
+  const metrics = posterTextMetrics(styleOpts, w, lines);
   const box = posterTextBox({ styleOpts, width: w, height: posterSize.h });
 
   const flexAlign =
@@ -416,12 +444,20 @@ export default function PosterPreview() {
           id={POSTER_MAP_ID}
           ref={mapContainerRef}
           className={
-            'poster-map' + (drawingRoute ? ' drawing' : '') + (asCollage ? ' hidden-map' : '')
+            'poster-map' +
+            (drawingRoute ? ' drawing' : '') +
+            (asCollage || asSky ? ' hidden-map' : '')
           }
           style={framed ? { ...mapRectStyle, border: `1.5px solid ${theme.accent}` } : mapRectStyle}
         />
 
-        {asCollage && (
+        {asSky && (
+          <div className="sky-area" style={mapRectStyle}>
+            <canvas ref={skyRef} className="sky-canvas" />
+          </div>
+        )}
+
+        {asCollage && !asSky && (
           <div className="collage-area" style={mapRectStyle}>
             <CollageMaps
               cells={collage.cells}

@@ -29,6 +29,16 @@ export const TOP_KEYS: Record<string, string> = {
   markers: 'mk',
   couple: 'cp',
   collage: 'cg',
+  starmap: 'sk',
+};
+
+export const STARMAP_KEYS: Record<string, string> = {
+  enabled: 'e',
+  when: 'w',
+  showConstellations: 'sc',
+  showGrid: 'sg',
+  size: 'sz',
+  starSize: 'ss',
 };
 
 export const COLLAGE_KEYS: Record<string, string> = {

@@ -47,6 +47,7 @@ export function useExport() {
       routeWidth: s.routeWidth,
       couple: s.couple,
       collage: s.collage,
+      starmap: s.starmap,
       settings: settingsOverride ?? s.settings,
       deliver,
       onProgress: setStage,

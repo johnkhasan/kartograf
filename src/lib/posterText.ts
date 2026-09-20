@@ -1,12 +1,27 @@
 import { formatCoords } from './geocode';
 import { coupleActive, formatCoupleDistance, haversineMeters } from './couple';
-import type { CollageState, CoupleState, LocationInfo, StyleOptions } from '../types';
+import type {
+  CollageState,
+  CoupleState,
+  LocationInfo,
+  StarmapState,
+  StyleOptions,
+} from '../types';
 
 export interface PosterTextInput {
   styleOpts: StyleOptions;
   location: LocationInfo;
   couple: CoupleState;
   collage?: CollageState;
+  starmap?: StarmapState;
+}
+
+/** "2026-09-20T22:00" as it reads on a poster. */
+function whenLabel(when: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(when);
+  if (!match) return '';
+  const [, y, m, d, hh, mm] = match;
+  return hh ? `${d}.${m}.${y} · ${hh}:${mm}` : `${d}.${m}.${y}`;
 }
 
 /**
@@ -27,11 +42,23 @@ export interface PosterLines {
 }
 
 export function posterLines(s: PosterTextInput): PosterLines {
-  const { styleOpts, location, couple, collage } = s;
+  const { styleOpts, location, couple, collage, starmap } = s;
   const custom = {
     title: styleOpts.customTitle.trim(),
     subtitle: styleOpts.customSubtitle.trim(),
   };
+
+  // A sky poster is about a place at a moment, so the moment takes the line
+  // the coordinates would otherwise have.
+  if (starmap?.enabled) {
+    const stamp = whenLabel(starmap.when);
+    const coords = formatCoords(location.lat, location.lng);
+    return {
+      title: styleOpts.showCity ? (custom.title || location.name).toUpperCase() : '',
+      subtitle: styleOpts.showCountry ? (custom.subtitle || location.country).toUpperCase() : '',
+      meta: styleOpts.showCoords ? [stamp, coords].filter(Boolean).join('  ·  ') : stamp,
+    };
+  }
 
   // Each collage panel is captioned with its own place, so the poster's text
   // block would only repeat one of them — it stays empty unless the design
@@ -95,14 +122,51 @@ export interface TextMetrics {
  * user's scale and tracking multipliers. Shared so the canvas export can't
  * drift from the preview.
  */
-export function posterTextMetrics(styleOpts: StyleOptions, width: number): TextMetrics {
+/**
+ * Width of a line as the canvas will set it, measured off-screen with the
+ * poster's own font. The DOM wraps a long headline and the canvas does not,
+ * which used to leave an exported title running past the frame; measuring
+ * lets both renderers shrink it by the same amount instead.
+ */
+let ruler: CanvasRenderingContext2D | null = null;
+function lineWidth(text: string, family: string, weight: number, size: number, tracking: number) {
+  if (!text) return 0;
+  if (!ruler) ruler = document.createElement('canvas').getContext('2d');
+  if (!ruler) return 0;
+  ruler.font = `${weight} ${size}px "${family}", sans-serif`;
+  return ruler.measureText(text).width + tracking * text.length;
+}
+
+export function posterTextMetrics(
+  styleOpts: StyleOptions,
+  width: number,
+  /** when given, the block is scaled down until its longest line fits */
+  lines?: PosterLines
+): TextMetrics {
   const scale = styleOpts.textScale;
   const track = styleOpts.textTracking;
   const slot = (k: keyof typeof SLOT_SIZE) => {
     const size = width * SLOT_SIZE[k] * scale;
     return { size, tracking: size * SLOT_TRACKING[k] * track };
   };
-  return { title: slot('title'), subtitle: slot('subtitle'), meta: slot('meta') };
+  const metrics = { title: slot('title'), subtitle: slot('subtitle'), meta: slot('meta') };
+  if (!lines) return metrics;
+
+  const available =
+    width * (styleOpts.textAlign === 'center' ? 0.9 : 1 - TEXT_SIDE_PAD * 2 - 0.02);
+  const widest = Math.max(
+    lineWidth(lines.title, styleOpts.font, 700, metrics.title.size, metrics.title.tracking),
+    lineWidth(lines.subtitle, styleOpts.font, 400, metrics.subtitle.size, metrics.subtitle.tracking),
+    lineWidth(lines.meta, styleOpts.font, 400, metrics.meta.size, metrics.meta.tracking)
+  );
+  if (widest <= available || widest === 0) return metrics;
+
+  const fit = available / widest;
+  const shrink = (m: { size: number; tracking: number }) => ({
+    size: m.size * fit,
+    tracking: m.tracking * fit,
+  });
+  return { title: shrink(metrics.title), subtitle: shrink(metrics.subtitle), meta: shrink(metrics.meta) };
 }
 
 /** Distance of the text block from its anchored edge, as a fraction of height. */

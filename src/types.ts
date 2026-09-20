@@ -115,6 +115,17 @@ export interface CollageState {
   showLabels: boolean;
 }
 
+export interface StarmapState {
+  enabled: boolean;
+  /** ISO local datetime, as the input gives it */
+  when: string;
+  showConstellations: boolean;
+  showGrid: boolean;
+  /** disc radius as a fraction of the shorter poster side */
+  size: number;
+  starSize: number;
+}
+
 export interface LayerToggles {
   landcover: boolean;
   buildings: boolean;
@@ -173,6 +184,7 @@ export type PanelId =
   | 'markers'
   | 'couple'
   | 'collage'
+  | 'starmap'
   | 'routes'
   | 'settings';
 

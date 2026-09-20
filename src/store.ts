@@ -5,6 +5,7 @@ import { getTheme } from './data/themes';
 import type { Template } from './data/templates';
 import type { ProjectState } from './lib/projects';
 import type {
+  StarmapState,
   CollageCell,
   CollageState,
   CoupleState,
@@ -39,6 +40,7 @@ export interface AppState {
   drawingRoute: boolean;
   couple: CoupleState;
   collage: CollageState;
+  starmap: StarmapState;
   settings: ExportSettings;
   activePanel: PanelId | null;
   modalOpen: boolean;
@@ -75,6 +77,7 @@ export interface AppState {
   loadProject: (state: ProjectState) => void;
   setCouple: (patch: Partial<CoupleState>) => void;
   setCollage: (patch: Partial<CollageState>) => void;
+  setStarmap: (patch: Partial<StarmapState>) => void;
   addCollageCell: (location: LocationInfo) => void;
   updateCollageCell: (id: string, patch: Partial<CollageCell>) => void;
   removeCollageCell: (id: string) => void;
@@ -103,6 +106,7 @@ const HISTORY_KEYS = [
   'routeWidth',
   'couple',
   'collage',
+  'starmap',
   'settings',
 ] as const;
 
@@ -126,6 +130,14 @@ function pick<K extends readonly (keyof AppState)[]>(s: AppState, keys: K) {
   const out: Record<string, unknown> = {};
   for (const k of keys) out[k] = s[k];
   return out;
+}
+
+/** Tonight, rounded to the hour — the moment most sky posters are about. */
+function defaultWhen(): string {
+  const d = new Date();
+  d.setHours(22, 0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 let seq = 0;
@@ -155,6 +167,7 @@ export const DEFAULT_STATE: Pick<
   | 'drawingRoute'
   | 'couple'
   | 'collage'
+  | 'starmap'
   | 'settings'
   | 'activePanel'
   | 'modalOpen'
@@ -222,6 +235,14 @@ export const DEFAULT_STATE: Pick<
     gap: 0.03,
     showLabels: true,
   },
+  starmap: {
+    enabled: false,
+    when: defaultWhen(),
+    showConstellations: true,
+    showGrid: false,
+    size: 0.86,
+    starSize: 1,
+  },
   settings: { scale: 2, format: 'png', bleedMm: 0 },
   activePanel: 'location',
   modalOpen: true,
@@ -288,6 +309,7 @@ export const useStore = create<AppState>()(
         loadProject: (state) => set({ ...state }),
         setCouple: (patch) => set((s) => ({ couple: { ...s.couple, ...patch } })),
         setCollage: (patch) => set((s) => ({ collage: { ...s.collage, ...patch } })),
+        setStarmap: (patch) => set((s) => ({ starmap: { ...s.starmap, ...patch } })),
         addCollageCell: (location) =>
           set((s) => ({
             collage: {
@@ -349,6 +371,7 @@ export const useStore = create<AppState>()(
           ...p,
           layers: { ...current.layers, ...p.layers },
           collage: { ...current.collage, ...p.collage },
+          starmap: { ...current.starmap, ...p.starmap },
           styleOpts: { ...current.styleOpts, ...p.styleOpts },
           settings: { ...current.settings, ...p.settings },
           couple: { ...current.couple, ...p.couple },

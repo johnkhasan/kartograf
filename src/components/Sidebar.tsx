@@ -11,6 +11,7 @@ import {
   IconMarker,
   IconCollage,
   IconRoute,
+  IconStar,
   IconSettings,
   IconTemplate,
   IconTheme,
@@ -25,6 +26,7 @@ import LayersPanel from './panels/LayersPanel';
 import MarkersPanel from './panels/MarkersPanel';
 import CouplePanel from './panels/CouplePanel';
 import CollagePanel from './panels/CollagePanel';
+import StarmapPanel from './panels/StarmapPanel';
 import RoutesPanel from './panels/RoutesPanel';
 import SettingsPanel from './panels/SettingsPanel';
 
@@ -38,6 +40,7 @@ const PANELS: Record<PanelId, React.ComponentType> = {
   markers: MarkersPanel,
   couple: CouplePanel,
   collage: CollagePanel,
+  starmap: StarmapPanel,
   routes: RoutesPanel,
   settings: SettingsPanel,
 };
@@ -156,6 +159,7 @@ export default function Sidebar() {
     { id: 'markers', label: t.markers, icon: <IconMarker /> },
     { id: 'couple', label: t.panelCouple, icon: <IconHeart /> },
     { id: 'collage', label: t.panelCollage, icon: <IconCollage /> },
+    { id: 'starmap', label: t.panelStarmap, icon: <IconStar /> },
     { id: 'routes', label: t.panelRoutes, icon: <IconRoute /> },
     { id: 'settings', label: t.panelSettings, icon: <IconSettings /> },
   ];

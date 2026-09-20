@@ -63,6 +63,12 @@ export const IconCollage = (p: IconProps) => (
   </svg>
 );
 
+export const IconStar = (p: IconProps) => (
+  <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+    <path d="M12 3.2l2.5 5.4 5.9.6-4.4 4 1.3 5.8L12 16l-5.3 3 1.3-5.8-4.4-4 5.9-.6L12 3.2z" />
+  </svg>
+);
+
 export const IconRoute = (p: IconProps) => (
   <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <circle cx="6" cy="19" r="2" />

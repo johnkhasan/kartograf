@@ -3,6 +3,7 @@ import { buildMapStyle } from './mapStyle';
 import { applyCoupleLayers, coupleActive } from './couple';
 import { borderRules, grainSize, grainTile } from './grain';
 import { collageGeometry } from '../components/CollageMaps';
+import { drawSky, loadSky } from './sky';
 import { HEART, heartOutline, pdfFontSet, pdfSafeText, type PdfFontSet } from './pdfFonts';
 import {
   posterLines,
@@ -13,6 +14,7 @@ import {
 } from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
+  StarmapState,
   CollageState,
   CoupleState,
   ExportSettings,
@@ -45,6 +47,7 @@ export interface ExportJob {
   routeWidth: number;
   couple: CoupleState;
   collage: CollageState;
+  starmap: StarmapState;
   settings: ExportSettings;
   /** 'download' saves the file; 'file' hands it back instead, for sharing */
   deliver?: 'download' | 'file';
@@ -120,6 +123,7 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
       location: job.location,
       couple: job.couple,
       collage: job.collage,
+      starmap: job.starmap,
     })
   );
 
@@ -129,6 +133,15 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
   document.body.appendChild(container);
 
   const zoomOffset = Math.log2(rect.w / job.previewMapWidth);
+
+  if (job.starmap.enabled) {
+    try {
+      const out = await exportSky(job, w, h, rect);
+      return await deliver(out, job, w, h, null);
+    } finally {
+      container.remove();
+    }
+  }
 
   if (job.collage.enabled && job.collage.cells.length >= 2) {
     try {
@@ -373,6 +386,51 @@ async function deliver(
   return null;
 }
 
+/** A sky poster: no map at all, just the chart and the usual overlay. */
+async function exportSky(
+  job: ExportJob,
+  w: number,
+  h: number,
+  rect: FrameRect
+): Promise<HTMLCanvasElement> {
+  job.onProgress?.('rendering');
+  const data = await loadSky();
+
+  const out = document.createElement('canvas');
+  out.width = w;
+  out.height = h;
+  const ctx = out.getContext('2d')!;
+  ctx.fillStyle = job.theme.bg;
+  ctx.fillRect(0, 0, w, h);
+
+  if (data) {
+    ctx.save();
+    ctx.translate(rect.x, rect.y);
+    drawSky(
+      ctx,
+      data,
+      { theme: job.theme, state: job.starmap },
+      job.location.lat,
+      job.location.lng,
+      rect.w,
+      rect.h
+    );
+    ctx.restore();
+  }
+
+  job.onProgress?.('compositing');
+  if (job.styleOpts.frame) {
+    ctx.strokeStyle = job.theme.accent;
+    ctx.lineWidth = Math.max(1, w * 0.0015);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  }
+
+  await drawOverlay(ctx, job, w, h);
+  await drawGrain(ctx, job, w, h);
+  drawBorder(ctx, job, w, h);
+  return out;
+}
+
 async function exportCollage(
   job: ExportJob,
   w: number,
@@ -605,8 +663,9 @@ export function overlayPlan(job: ExportJob, w: number, h: number): OverlayPlan |
     location,
     couple: job.couple,
     collage: job.collage,
+    starmap: job.starmap,
   });
-  const metrics = posterTextMetrics(styleOpts, w);
+  const metrics = posterTextMetrics(styleOpts, w, { title, subtitle, meta });
 
   // built bottom-up, so the block has to be measured before it can be
   // anchored anywhere other than the bottom edge
@@ -692,7 +751,7 @@ async function drawOverlay(
 ) {
   const { styleOpts, theme } = job;
   const font = styleOpts.font;
-  const metrics = posterTextMetrics(styleOpts, w);
+  const metrics = posterTextMetrics(styleOpts, w);  // sizes only, for font preloading
 
   await Promise.all([
     document.fonts.load(`700 ${metrics.title.size}px "${font}"`),

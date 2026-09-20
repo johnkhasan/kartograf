@@ -15,6 +15,8 @@ ma'lumotlaridan foydalanadi.
 - **Markers** — 6 ta ikon, sudrab ko'chirish, o'lchov va rang sozlash
 - **Juftlik** — sevishganlar rejimi: ikkita joy, orasida yoy yoki geodezik chiziq,
   yurak belgilari va real masofa (km/mil) poster matnida
+- **Kollaj** — 2–4 shaharni bitta posterda, har biri alohida panel
+- **Osmon** — tanlangan joy va vaqtdagi yulduzli osmon xaritasi
 - **Routes** — xaritada bosib marshrut chizish
 - **Download** — 1x/2x/3x sifatda, xarita + belgilar + matn birga eksport (300 DPI gacha)
 
@@ -46,3 +48,6 @@ Eksport jonli preview'dan alohida, yashirin yuqori o'lchamli xarita render qilib
 ## Litsenziya / atribusiya
 
 Xarita ma'lumotlari © OpenStreetMap contributors (ODbL). Tile'lar OpenFreeMap.
+Yulduz katalogi va burj chiziqlari — [d3-celestial](https://github.com/ofrohn/d3-celestial)
+(BSD-3). Poster shriftlari — Google Fonts (OFL), `scripts/fetch-fonts.py` orqali
+kerakli belgilargagina qisqartirilgan.

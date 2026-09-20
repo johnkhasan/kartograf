@@ -826,20 +826,22 @@ body {
 
 .poster-city {
   font-weight: 700;
-  text-indent: 0.32em; /* balance trailing letter-spacing */
   line-height: 1.2;
-  max-width: 92%;
+  /* the shared metrics already shrink the block to fit, and the canvas can't
+     wrap — letting the DOM wrap instead would split a title the export keeps
+     on one line */
+  white-space: nowrap;
 }
 
 .poster-country {
   opacity: 0.85;
-  text-indent: 0.35em;
   padding-bottom: 0.5em;
+  white-space: nowrap;
 }
 
 .poster-coords {
   opacity: 0.75;
-  text-indent: 0.18em;
+  white-space: nowrap;
 }
 
 .poster-attrib {
@@ -1859,4 +1861,17 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11.5px;
+}
+
+.sky-area {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* a canvas keeps its intrinsic size unless CSS gives it one, so insets alone
+   left it at the default 300x150 */
+.sky-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
