@@ -85,6 +85,29 @@ export default function ExportDialog() {
               </button>
             ))}
           </div>
+          {settings.format === 'pdf' && layout.widthMm && (
+            <>
+              <div className="group-label">{t.bleed}</div>
+              <div className="seg-row">
+                {([0, 3, 5] as const).map((mm) => (
+                  <button
+                    key={mm}
+                    className={'seg' + (settings.bleedMm === mm ? ' active' : '')}
+                    onClick={() => setSettings({ bleedMm: mm })}
+                    disabled={exporting}
+                  >
+                    {mm === 0 ? t.bleedNone : `${mm} mm`}
+                  </button>
+                ))}
+              </div>
+              <div className="kv">
+                <span className="kv-label">{t.pageSize}</span>
+                <span className="kv-value">
+                  {layout.widthMm + settings.bleedMm * 2} × {layout.heightMm! + settings.bleedMm * 2} mm
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="modal-footer">

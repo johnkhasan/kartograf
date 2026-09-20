@@ -27,6 +27,9 @@ export interface Layout {
   /** export size in px (long edge derived from this width) */
   exportWidth: number;
   exportHeight: number;
+  /** physical sheet size — print formats only; drives the PDF page size */
+  widthMm?: number;
+  heightMm?: number;
 }
 
 export interface LocationInfo {
@@ -135,6 +138,8 @@ export interface StyleOptions {
 export interface ExportSettings {
   scale: 1 | 2 | 3;
   format: 'png' | 'jpeg' | 'pdf';
+  /** mm of bleed added around a print PDF, with crop marks; 0 = trim only */
+  bleedMm: number;
 }
 
 export type ExportStage = 'preparing' | 'rendering' | 'compositing' | 'saving';

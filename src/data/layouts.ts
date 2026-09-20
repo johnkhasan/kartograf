@@ -45,6 +45,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 29.7 / 42,
     exportWidth: 2480,
     exportHeight: 3508,
+    widthMm: 297,
+    heightMm: 420,
   },
   {
     id: 'a4-portrait',
@@ -54,6 +56,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 21 / 29.7,
     exportWidth: 2480,
     exportHeight: 3508,
+    widthMm: 210,
+    heightMm: 297,
   },
   {
     id: 'a5-portrait',
@@ -63,6 +67,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 14.8 / 21,
     exportWidth: 1748,
     exportHeight: 2480,
+    widthMm: 148,
+    heightMm: 210,
   },
   {
     id: 'letter-portrait',
@@ -72,6 +78,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 21.6 / 27.9,
     exportWidth: 2550,
     exportHeight: 3300,
+    widthMm: 216,
+    heightMm: 279,
   },
   {
     id: 'a4-landscape',
@@ -81,6 +89,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 29.7 / 21,
     exportWidth: 3508,
     exportHeight: 2480,
+    widthMm: 297,
+    heightMm: 210,
   },
   {
     id: 'square',
@@ -90,6 +100,8 @@ export const LAYOUTS: Layout[] = [
     ratio: 1,
     exportWidth: 2400,
     exportHeight: 2400,
+    widthMm: 300,
+    heightMm: 300,
   },
   {
     id: 'ig-square',

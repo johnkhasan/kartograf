@@ -191,18 +191,15 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
     const base = `kartograf-${slug}-${layout.id}`;
 
     if (settings.format === 'pdf') {
-      const { jsPDF } = await import('jspdf');
-      const pdf = new jsPDF({
-        orientation: w >= h ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [w, h],
-        compress: true,
-      });
-      pdf.addImage(out.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, w, h);
+      const blob = await buildPdf(out, job, w, h);
       if (job.deliver === 'file') {
-        return new File([pdf.output('blob')], `${base}.pdf`, { type: 'application/pdf' });
+        return new File([blob], `${base}.pdf`, { type: 'application/pdf' });
       }
-      pdf.save(`${base}.pdf`);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${base}.pdf`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
       return null;
     }
 
@@ -223,6 +220,82 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
     map.remove();
     container.remove();
   }
+}
+
+/**
+ * A print-ready PDF.
+ *
+ * The page is the sheet's real physical size (A4 is 210x297mm, not a page
+ * measured in pixels), so a print shop gets what the format claims. The
+ * poster goes in as lossless PNG: JPEG at this size leaves visible artefacts
+ * around the lettering, and a poster is mostly flat colour, which PNG packs
+ * well anyway.
+ *
+ * With bleed the page grows by the bleed on every side and the artwork is
+ * scaled to fill it — about 1.4% at A4 with 3mm, which is imperceptible and
+ * keeps the composition intact rather than re-rendering a wider slice of map.
+ * Crop marks go in the bleed margin, so a trimming error leaves poster rather
+ * than a white hairline. Screen formats have no physical size, so those keep
+ * a page measured in pixels.
+ */
+async function buildPdf(
+  canvas: HTMLCanvasElement,
+  job: ExportJob,
+  w: number,
+  h: number
+): Promise<Blob> {
+  const { jsPDF } = await import('jspdf');
+  const { layout } = job;
+  const image = canvas.toDataURL('image/png');
+
+  const sheetW = layout.widthMm;
+  const sheetH = layout.heightMm;
+
+  if (!sheetW || !sheetH) {
+    const pdf = new jsPDF({
+      orientation: w >= h ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [w, h],
+      compress: true,
+    });
+    pdf.addImage(image, 'PNG', 0, 0, w, h);
+    return pdf.output('blob');
+  }
+
+  const bleed = Math.max(0, job.settings.bleedMm);
+  const pageW = sheetW + bleed * 2;
+  const pageH = sheetH + bleed * 2;
+
+  const pdf = new jsPDF({
+    orientation: pageW >= pageH ? 'landscape' : 'portrait',
+    unit: 'mm',
+    format: [pageW, pageH],
+    compress: true,
+  });
+
+  // the artwork covers the trim box plus the bleed on every side
+  pdf.addImage(image, 'PNG', 0, 0, pageW, pageH, undefined, 'FAST');
+
+  if (bleed > 0) {
+    const len = Math.min(bleed, 4);
+    pdf.setDrawColor(0);
+    pdf.setLineWidth(0.15);
+    const marks: Array<[number, number, number, number]> = [
+      // each trim corner gets one horizontal and one vertical mark, drawn
+      // out in the bleed margin so they fall away when the sheet is cut
+      [0, bleed, len, bleed],
+      [bleed, 0, bleed, len],
+      [pageW - len, bleed, pageW, bleed],
+      [pageW - bleed, 0, pageW - bleed, len],
+      [0, pageH - bleed, len, pageH - bleed],
+      [bleed, pageH - len, bleed, pageH],
+      [pageW - len, pageH - bleed, pageW, pageH - bleed],
+      [pageW - bleed, pageH - len, pageW - bleed, pageH],
+    ];
+    for (const [x1, y1, x2, y2] of marks) pdf.line(x1, y1, x2, y2);
+  }
+
+  return pdf.output('blob');
 }
 
 async function drawMarkers(

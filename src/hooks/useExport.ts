@@ -113,7 +113,7 @@ export function useExport() {
    * the actual place rather than a generic swatch; a few kB in localStorage.
    */
   const renderThumb = async (width = 200): Promise<string> => {
-    const file = await run('file', (f) => f, { scale: 1, format: 'jpeg' });
+    const file = await run('file', (f) => f, { scale: 1, format: 'jpeg', bleedMm: 0 });
     if (!file) return '';
     try {
       const bitmap = await createImageBitmap(file);

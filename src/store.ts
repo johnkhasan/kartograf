@@ -206,7 +206,7 @@ export const DEFAULT_STATE: Pick<
     dashed: false,
     lineWidth: 2.5,
   },
-  settings: { scale: 2, format: 'png' },
+  settings: { scale: 2, format: 'png', bleedMm: 0 },
   activePanel: 'location',
   modalOpen: true,
   exportDialogOpen: false,

@@ -78,7 +78,7 @@ const LAYER_KEYS: Record<string, string> = {
   aeroway: 'ae',
   boundaries: 'bd',
 };
-const SETTINGS_KEYS: Record<string, string> = { scale: 'sc', format: 'fm' };
+const SETTINGS_KEYS: Record<string, string> = { scale: 'sc', format: 'fm', bleedMm: 'bl' };
 const COUPLE_KEYS: Record<string, string> = {
   enabled: 'e',
   a: 'a',
