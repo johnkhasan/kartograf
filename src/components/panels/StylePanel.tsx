@@ -177,6 +177,38 @@ export default function StylePanel() {
         ))}
       </div>
 
+      <div className="group-label">{t.finish}</div>
+      <div className="slider-row">
+        <span className="slider-label">{t.grain}</span>
+        <span className="slider-value">{Math.round(styleOpts.grain * 100)}%</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={0.6}
+        step={0.02}
+        value={styleOpts.grain}
+        onChange={(e) => setStyleOpts({ grain: parseFloat(e.target.value) })}
+        className="slider"
+      />
+      <div className="seg-row">
+        {(
+          [
+            ['none', t.borderNone],
+            ['thin', t.borderThin],
+            ['double', t.borderDouble],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            className={'seg' + (styleOpts.border === id ? ' active' : '')}
+            onClick={() => setStyleOpts({ border: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="group-label">{t.font}</div>
       <div className="font-list">
         {FONTS.map((f) => (

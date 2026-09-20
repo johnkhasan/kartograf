@@ -126,6 +126,10 @@ export interface StyleOptions {
   textTracking: number;
   /** the accent rule under the subtitle */
   divider: 'line' | 'dots' | 'none';
+  /** film grain strength, 0 = off */
+  grain: number;
+  /** decorative rules just inside the poster edge */
+  border: 'none' | 'thin' | 'double';
 }
 
 export interface ExportSettings {

@@ -174,6 +174,8 @@ export const DEFAULT_STATE: Pick<
     textScale: 1,
     textTracking: 1,
     divider: 'line',
+    grain: 0,
+    border: 'none',
   },
   layers: {
     landcover: true,

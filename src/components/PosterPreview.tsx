@@ -12,6 +12,7 @@ import { useStore, activeTheme, useActiveTheme } from '../store';
 import { buildMapStyle } from '../lib/mapStyle';
 import { applyCoupleLayers } from '../lib/couple';
 import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from '../lib/posterText';
+import { borderRules, grainSize, grainTile } from '../lib/grain';
 import { markerSvg } from '../data/markerIcons';
 import { FRAME_PAD, FRAME_BOTTOM } from '../lib/export';
 import { getLayout } from '../data/layouts';
@@ -429,6 +430,29 @@ export default function PosterPreview() {
               background: `linear-gradient(to bottom, ${posterScrim(styleOpts)
                 .map((stop) => `${hexA(theme.bg, stop.alpha)} ${(stop.at * 100).toFixed(1)}%`)
                 .join(', ')})`,
+            }}
+          />
+        )}
+
+        {styleOpts.border !== 'none' &&
+          borderRules(styleOpts.border, w).map((rule, i) => (
+            <div
+              key={i}
+              className="poster-border"
+              style={{
+                inset: rule.inset,
+                border: `${rule.width}px solid ${theme.accent}`,
+              }}
+            />
+          ))}
+
+        {styleOpts.grain > 0 && (
+          <div
+            className="poster-grain"
+            style={{
+              backgroundImage: `url(${grainTile()})`,
+              backgroundSize: `${grainSize(w)}px`,
+              opacity: styleOpts.grain,
             }}
           />
         )}

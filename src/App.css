@@ -1764,3 +1764,19 @@ body {
   color: var(--danger);
   border-color: var(--danger);
 }
+
+/* ---------- poster finish ---------- */
+.poster-border {
+  position: absolute;
+  pointer-events: none;
+}
+
+.poster-grain {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  /* overlay keeps the noise tied to the colour underneath rather than
+     washing the poster grey, and matches the canvas composite in the export */
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}

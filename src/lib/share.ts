@@ -65,6 +65,8 @@ const STYLE_KEYS: Record<string, string> = {
   textScale: 'ts',
   textTracking: 'tk',
   divider: 'dv',
+  grain: 'gr',
+  border: 'br',
 };
 const LAYER_KEYS: Record<string, string> = {
   landcover: 'lc',

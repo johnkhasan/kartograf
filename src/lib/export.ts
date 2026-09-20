@@ -1,6 +1,7 @@
 import { Map as MLMap, type ErrorEvent } from 'maplibre-gl';
 import { buildMapStyle } from './mapStyle';
 import { applyCoupleLayers, coupleActive } from './couple';
+import { borderRules, grainSize, grainTile } from './grain';
 import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
@@ -178,6 +179,8 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
 
     await drawMarkers(ctx, map, job, rect);
     await drawOverlay(ctx, job, w, h);
+    await drawGrain(ctx, job, w, h);
+    drawBorder(ctx, job, w, h);
 
     onProgress?.('saving');
     // a couple poster is about the pair, so name the file after both places
@@ -444,6 +447,51 @@ async function drawOverlay(
   }
 
   setLetterSpacing(ctx, 0);
+}
+
+/**
+ * Film grain over the finished poster, from the same tile the preview uses
+ * and scaled the same way, so the texture is the size it looked on screen.
+ */
+async function drawGrain(ctx: CanvasRenderingContext2D, job: ExportJob, w: number, h: number) {
+  const strength = job.styleOpts.grain;
+  if (strength <= 0) return;
+
+  const img = new Image();
+  img.src = grainTile();
+  try {
+    await img.decode();
+  } catch {
+    return;
+  }
+
+  const pattern = ctx.createPattern(img, 'repeat');
+  if (!pattern) return;
+  pattern.setTransform(new DOMMatrix().scale(grainSize(w) / img.width));
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = strength;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
+/** The decorative rules just inside the poster edge. */
+function drawBorder(ctx: CanvasRenderingContext2D, job: ExportJob, w: number, h: number) {
+  const rules = borderRules(job.styleOpts.border, w);
+  if (!rules.length) return;
+
+  ctx.save();
+  ctx.strokeStyle = job.theme.accent;
+  for (const rule of rules) {
+    ctx.lineWidth = rule.width;
+    // stroke sits astride the path, so offset by half a line to land the
+    // rule exactly where the preview's CSS border does
+    const o = rule.inset + rule.width / 2;
+    ctx.strokeRect(o, o, w - o * 2, h - o * 2);
+  }
+  ctx.restore();
 }
 
 /** Resolves on the map's next idle, or after `ms` if it never settles. */
