@@ -98,7 +98,7 @@ export function readShare(code: string): SharePreview | null {
     return {
       title: `${nameA} ${sep} ${nameB}`,
       subtitle: (named ? pair(a.name, b.name) : pair(a.country, b.country)).toUpperCase(),
-      meta: [`${group(rounded)} ${miles ? 'MI' : 'KM'}`, date].filter(Boolean).join(' · '),
+      meta: [`${group(rounded)}\u00A0${miles ? 'MI' : 'KM'}`, date].filter(Boolean).join(' · '),
       theme,
       couple: true,
     };
