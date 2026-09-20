@@ -1,7 +1,5 @@
 import { readShare } from './_share';
 
-export const config = { runtime: 'edge' };
-
 const SITE = 'https://map.javohir.ru';
 
 const escape = (s: string) =>

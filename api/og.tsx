@@ -1,8 +1,6 @@
 import { ImageResponse } from '@vercel/og';
 import { readShare } from './_share';
 
-export const config = { runtime: 'edge' };
-
 const WIDTH = 1200;
 const HEIGHT = 630;
 

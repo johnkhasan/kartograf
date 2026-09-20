@@ -4,7 +4,10 @@
     {
       "source": "/",
       "has": [
-        { "type": "query", "key": "s" },
+        {
+          "type": "query",
+          "key": "s"
+        },
         {
           "type": "header",
           "key": "user-agent",
@@ -13,5 +16,10 @@
       ],
       "destination": "/api/preview"
     }
-  ]
+  ],
+  "functions": {
+    "api/og.tsx": {
+      "includeFiles": "node_modules/@vercel/og/dist/**"
+    }
+  }
 }
