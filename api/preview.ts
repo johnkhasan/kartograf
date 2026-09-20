@@ -19,7 +19,8 @@ const escape = (s: string) =>
  * it anyway is sent straight on to the app with their code.
  */
 export default async function handler(request: Request) {
-  const url = new URL(request.url);
+  // this runtime hands the handler a path, not an absolute URL
+  const url = new URL(request.url, SITE);
   const code = url.searchParams.get('s') ?? '';
   const preview = readShare(code);
   const target = `${SITE}/?s=${encodeURIComponent(code)}`;

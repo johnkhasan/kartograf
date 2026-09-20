@@ -40,7 +40,9 @@ function posterFont(): Buffer {
 }
 
 export default async function handler(request: Request) {
-  const preview = readShare(new URL(request.url).searchParams.get('s') ?? '');
+  // this runtime hands the handler a path, not an absolute URL
+  const url = new URL(request.url, 'http://localhost');
+  const preview = readShare(url.searchParams.get('s') ?? '');
   if (!preview) return new Response('Not found', { status: 404 });
 
   const { theme, title, subtitle, meta } = preview;
