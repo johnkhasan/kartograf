@@ -190,13 +190,17 @@ export async function applyCoupleLayers(map: MLMap, opts: CoupleRenderOpts): Pro
   }
 
   const size = Math.max(8, Math.round(iconSize));
-  const iconKey = `${iconColor}|${size}`;
+  // Rasterize at the map's own pixel density, or the heart comes out soft on
+  // a retina screen. The export map renders at 1, and its icon is already
+  // sized for the full-resolution canvas.
+  const density = map.getPixelRatio?.() ?? 1;
+  const iconKey = `${iconColor}|${size}|${density}`;
   if (iconKeys.get(map) !== iconKey || !map.hasImage(COUPLE_ICON)) {
-    const image = await heartImage(iconColor, size);
+    const image = await heartImage(iconColor, Math.round(size * density));
     // the style may have been swapped (theme change) while the icon decoded
     if (!map.getStyle()) return;
     if (map.hasImage(COUPLE_ICON)) map.removeImage(COUPLE_ICON);
-    map.addImage(COUPLE_ICON, image);
+    map.addImage(COUPLE_ICON, image, { pixelRatio: density });
     iconKeys.set(map, iconKey);
   }
 
@@ -238,7 +242,16 @@ export async function applyCoupleLayers(map: MLMap, opts: CoupleRenderOpts): Pro
     });
   }
 
-  if (!map.getLayer(COUPLE_POINT_LAYER)) {
+  // The heart stands on the endpoint rather than sitting centred over it:
+  // centred, the line ran into the middle of the icon and it was impossible
+  // to tell where the arc actually began and ended. Anchoring to the bottom
+  // and nudging down by the empty strip under the heart's tip in the 24px
+  // source box lands that tip exactly on the coordinate.
+  const iconOffset: [number, number] = [0, (HEART_TIP_GAP / 24) * size];
+
+  if (map.getLayer(COUPLE_POINT_LAYER)) {
+    map.setLayoutProperty(COUPLE_POINT_LAYER, 'icon-offset', iconOffset);
+  } else {
     map.addLayer({
       id: COUPLE_POINT_LAYER,
       type: 'symbol',
@@ -246,13 +259,17 @@ export async function applyCoupleLayers(map: MLMap, opts: CoupleRenderOpts): Pro
       layout: {
         'icon-image': COUPLE_ICON,
         'icon-size': 1,
-        'icon-anchor': 'center',
+        'icon-anchor': 'bottom',
+        'icon-offset': iconOffset,
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
       },
     });
   }
 }
+
+/** Empty space below the heart path's lowest point in its 24x24 source box. */
+const HEART_TIP_GAP = 24 - 21.35;
 
 export function removeCoupleLayers(map: MLMap): void {
   if (!map.getStyle()) return;
