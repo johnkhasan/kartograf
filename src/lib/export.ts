@@ -2,6 +2,7 @@ import { Map as MLMap, type ErrorEvent } from 'maplibre-gl';
 import { buildMapStyle } from './mapStyle';
 import { applyCoupleLayers, coupleActive } from './couple';
 import { borderRules, grainSize, grainTile } from './grain';
+import { HEART, heartOutline, pdfFontSet, pdfSafeText, type PdfFontSet } from './pdfFonts';
 import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
@@ -178,7 +179,17 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
     }
 
     await drawMarkers(ctx, map, job, rect);
-    await drawOverlay(ctx, job, w, h);
+
+    // For a PDF the overlay is set as real text rather than baked into the
+    // image, but only when the embedded subset can render every character —
+    // otherwise it falls back to being drawn on the canvas as before.
+    const plan = overlayPlan(job, w, h);
+    const vectorText =
+      settings.format === 'pdf' && plan
+        ? await pdfFontSet(job.styleOpts.font, plan.items.map((i) => i.text))
+        : null;
+
+    await drawOverlay(ctx, job, w, h, { text: !vectorText });
     await drawGrain(ctx, job, w, h);
     drawBorder(ctx, job, w, h);
 
@@ -191,7 +202,7 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
     const base = `kartograf-${slug}-${layout.id}`;
 
     if (settings.format === 'pdf') {
-      const blob = await buildPdf(out, job, w, h);
+      const blob = await buildPdf(out, job, w, h, vectorText && plan ? { plan, fonts: vectorText } : null);
       if (job.deliver === 'file') {
         return new File([blob], `${base}.pdf`, { type: 'application/pdf' });
       }
@@ -242,7 +253,8 @@ async function buildPdf(
   canvas: HTMLCanvasElement,
   job: ExportJob,
   w: number,
-  h: number
+  h: number,
+  vector: { plan: OverlayPlan; fonts: PdfFontSet } | null
 ): Promise<Blob> {
   const { jsPDF } = await import('jspdf');
   const { layout } = job;
@@ -259,6 +271,7 @@ async function buildPdf(
       compress: true,
     });
     pdf.addImage(image, 'PNG', 0, 0, w, h);
+    if (vector) writePdfText(pdf, vector, job, 1);
     return pdf.output('blob');
   }
 
@@ -275,6 +288,7 @@ async function buildPdf(
 
   // the artwork covers the trim box plus the bleed on every side
   pdf.addImage(image, 'PNG', 0, 0, pageW, pageH, undefined, 'FAST');
+  if (vector) writePdfText(pdf, vector, job, pageW / w);
 
   if (bleed > 0) {
     const len = Math.min(bleed, 4);
@@ -394,83 +408,69 @@ function drawMarkerLabels(
   ctx.restore();
 }
 
-async function drawOverlay(
-  ctx: CanvasRenderingContext2D,
-  job: ExportJob,
-  w: number,
-  h: number
-) {
-  const { styleOpts, theme, location } = job;
-  const font = styleOpts.font;
-  const framed = styleOpts.frame;
+export interface OverlayItem {
+  text: string;
+  size: number;
+  weight: number;
+  alpha: number;
+  tracking: number;
+  /** baseline position in canvas pixels */
+  baselineY: number;
+  rule: boolean;
+}
 
+export interface OverlayPlan {
+  items: OverlayItem[];
+  /** anchor x for the chosen alignment */
+  x: number;
+  align: 'left' | 'center' | 'right';
+}
+
+/**
+ * Where every line of the poster text lands, in canvas pixels. Shared by the
+ * canvas painter and the PDF writer so a vector-set poster sits exactly where
+ * the raster one did.
+ */
+export function overlayPlan(job: ExportJob, w: number, h: number): OverlayPlan | null {
+  const { styleOpts, location } = job;
+  const framed = styleOpts.frame;
   const { title, subtitle, meta } = posterLines({ styleOpts, location, couple: job.couple });
   const metrics = posterTextMetrics(styleOpts, w);
-  const cityPx = metrics.title.size;
-  const countryPx = metrics.subtitle.size;
-  const coordsPx = metrics.meta.size;
 
-  await Promise.all([
-    document.fonts.load(`700 ${cityPx}px "${font}"`),
-    document.fonts.load(`400 ${countryPx}px "${font}"`),
-  ]).catch(() => {});
-
-  if (!framed && styleOpts.showOverlay) {
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    for (const stop of posterScrim(styleOpts)) {
-      grad.addColorStop(Math.max(0, Math.min(1, stop.at)), hexA(theme.bg, stop.alpha));
-    }
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-  }
-
-  // Drawn bottom-up, so the block has to be measured before it can be
-  // anchored anywhere other than the bottom edge.
+  // built bottom-up, so the block has to be measured before it can be
+  // anchored anywhere other than the bottom edge
   const stack = [
     meta && {
       text: meta,
-      size: coordsPx,
+      size: metrics.meta.size,
       weight: 400,
       alpha: 0.75,
       tracking: metrics.meta.tracking,
-      gapAbove: coordsPx * 2.1,
+      gapAbove: metrics.meta.size * 2.1,
       rule: false,
     },
     subtitle && {
       text: subtitle,
-      size: countryPx,
+      size: metrics.subtitle.size,
       weight: 400,
       alpha: 0.85,
       tracking: metrics.subtitle.tracking,
-      gapAbove: countryPx * 2.6,
+      gapAbove: metrics.subtitle.size * 2.6,
       rule: styleOpts.divider !== 'none',
     },
     title && {
       text: title,
-      size: cityPx,
+      size: metrics.title.size,
       weight: 700,
       alpha: 1,
       tracking: metrics.title.tracking,
       gapAbove: 0,
       rule: false,
     },
-  ].filter(Boolean) as Array<{
-    text: string;
-    size: number;
-    weight: number;
-    alpha: number;
-    tracking: number;
-    gapAbove: number;
-    rule: boolean;
-  }>;
+  ].filter(Boolean) as Array<Omit<OverlayItem, 'baselineY'> & { gapAbove: number }>;
 
-  if (!stack.length) {
-    setLetterSpacing(ctx, 0);
-    return;
-  }
+  if (!stack.length) return null;
 
-  // distance from the bottom baseline to the top line's baseline, plus that
-  // line's cap height — i.e. how tall the block reads
   const advance = stack.slice(0, -1).reduce((sum, item) => sum + item.gapAbove, 0);
   const blockHeight = advance + stack[stack.length - 1].size;
 
@@ -487,16 +487,61 @@ async function drawOverlay(
         ? box.edge + blockHeight
         : h / 2 + blockHeight / 2 + box.centerShift;
 
-  ctx.textAlign = box.align === 'center' ? 'center' : box.align;
-  ctx.textBaseline = 'alphabetic';
-  const cx =
-    box.align === 'left' ? box.sidePad : box.align === 'right' ? w - box.sidePad : w / 2;
-
+  const items: OverlayItem[] = [];
   for (const item of stack) {
+    items.push({ ...item, baselineY: y });
+    y -= item.gapAbove;
+  }
+
+  return {
+    items,
+    align: box.align,
+    x: box.align === 'left' ? box.sidePad : box.align === 'right' ? w - box.sidePad : w / 2,
+  };
+}
+
+/** The legibility scrim, without any text. */
+function drawScrim(ctx: CanvasRenderingContext2D, job: ExportJob, w: number, h: number) {
+  const { styleOpts, theme } = job;
+  if (styleOpts.frame || !styleOpts.showOverlay) return;
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  for (const stop of posterScrim(styleOpts)) {
+    grad.addColorStop(Math.max(0, Math.min(1, stop.at)), hexA(theme.bg, stop.alpha));
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+async function drawOverlay(
+  ctx: CanvasRenderingContext2D,
+  job: ExportJob,
+  w: number,
+  h: number,
+  options: { text?: boolean } = {}
+) {
+  const { styleOpts, theme } = job;
+  const font = styleOpts.font;
+  const metrics = posterTextMetrics(styleOpts, w);
+
+  await Promise.all([
+    document.fonts.load(`700 ${metrics.title.size}px "${font}"`),
+    document.fonts.load(`400 ${metrics.subtitle.size}px "${font}"`),
+  ]).catch(() => {});
+
+  drawScrim(ctx, job, w, h);
+  if (options.text === false) return;
+
+  const plan = overlayPlan(job, w, h);
+  if (!plan) return;
+
+  ctx.textAlign = plan.align;
+  ctx.textBaseline = 'alphabetic';
+
+  for (const item of plan.items) {
     ctx.font = `${item.weight} ${item.size}px "${font}", sans-serif`;
     setLetterSpacing(ctx, item.tracking);
     ctx.fillStyle = item.alpha === 1 ? theme.text : hexA(theme.text, item.alpha);
-    ctx.fillText(item.text, cx, y);
+    ctx.fillText(item.text, plan.x, item.baselineY);
 
     if (item.rule) {
       if (styleOpts.divider === 'dots') {
@@ -505,21 +550,148 @@ async function drawOverlay(
         // baseline, well clear of the next line's
         setLetterSpacing(ctx, item.size * 0.5);
         ctx.fillStyle = theme.accent;
-        ctx.fillText('···', cx, y + item.size * 0.95);
+        ctx.fillText('···', plan.x, item.baselineY + item.size * 0.95);
       } else {
         // matches the preview, where the rule is the subtitle's own underline
         // and therefore exactly as wide as the text
         const tw = ctx.measureText(item.text).width;
-        const x = box.align === 'left' ? cx : box.align === 'right' ? cx - tw : cx - tw / 2;
+        const x =
+          plan.align === 'left' ? plan.x : plan.align === 'right' ? plan.x - tw : plan.x - tw / 2;
         ctx.fillStyle = theme.accent;
-        ctx.fillRect(x, y + item.size * 0.55, tw, Math.max(1.5, w * 0.0018));
+        ctx.fillRect(x, item.baselineY + item.size * 0.55, tw, Math.max(1.5, w * 0.0018));
       }
     }
-
-    y -= item.gapAbove;
   }
 
   setLetterSpacing(ctx, 0);
+}
+
+type Pdf = import('jspdf').jsPDF;
+
+const PDF_FONT_ID = 'poster';
+
+/**
+ * Sets the poster's headline text as real text in the PDF, so it stays sharp
+ * at any size instead of being pixels in a picture.
+ *
+ * Positions come from the same plan the canvas painter uses, converted from
+ * export pixels to the page's own unit by `k`. Widths are measured including
+ * the trailing letter space, which is what the canvas does — so a vector PDF
+ * and a PNG of the same poster line up.
+ */
+function writePdfText(
+  pdf: Pdf,
+  vector: { plan: OverlayPlan; fonts: PdfFontSet },
+  job: ExportJob,
+  k: number
+) {
+  const { plan, fonts } = vector;
+  const { theme, styleOpts } = job;
+  const PT_PER_UNIT = 72 / 25.4;
+  const toPt = (px: number) => px * k * PT_PER_UNIT;
+
+  for (const face of fonts.faces) {
+    pdf.addFileToVFS(face.fileName, face.data);
+    pdf.addFont(face.fileName, PDF_FONT_ID, face.weight >= 600 ? 'bold' : 'normal');
+  }
+
+  const text = rgb(theme.text);
+  const accent = rgb(theme.accent);
+  const heart = heartOutline();
+
+  for (const item of plan.items) {
+    pdf.setFont(PDF_FONT_ID, item.weight >= 600 ? 'bold' : 'normal');
+    // jsPDF sizes type in points whatever the page unit is
+    pdf.setFontSize(toPt(item.size));
+    const tracking = item.tracking * k;
+    pdf.setCharSpace(tracking);
+    pdf.setTextColor(text[0], text[1], text[2]);
+    if (item.alpha < 1) pdf.setGState(pdf.GState({ opacity: item.alpha }));
+
+    const size = item.size * k;
+    const baseline = item.baselineY * k;
+    const runs = pdfSafeText(fonts.entry, item.text).split(HEART);
+    const heartWidth = heart.length ? size * 0.66 : 0;
+    const width =
+      runs.reduce((sum, run) => sum + pdf.getTextWidth(run) + tracking * run.length, 0) +
+      heartWidth * (runs.length - 1);
+
+    let x = plan.align === 'left' ? plan.x * k : plan.align === 'right' ? plan.x * k - width : plan.x * k - width / 2;
+
+    runs.forEach((run, i) => {
+      if (run) {
+        pdf.text(run, x, baseline, { align: 'left', baseline: 'alphabetic' });
+        x += pdf.getTextWidth(run) + tracking * run.length;
+      }
+      if (i < runs.length - 1) {
+        drawPdfHeart(pdf, heart, x, baseline, size, text);
+        x += heartWidth;
+      }
+    });
+
+    if (item.alpha < 1) pdf.setGState(pdf.GState({ opacity: 1 }));
+
+    if (item.rule) {
+      pdf.setFillColor(accent[0], accent[1], accent[2]);
+      if (styleOpts.divider === 'dots') {
+        pdf.setTextColor(accent[0], accent[1], accent[2]);
+        pdf.setCharSpace(size * 0.5);
+        const dotsWidth = pdf.getTextWidth('···') + size * 0.5 * 3;
+        const dx =
+          plan.align === 'left'
+            ? plan.x * k
+            : plan.align === 'right'
+              ? plan.x * k - dotsWidth
+              : plan.x * k - dotsWidth / 2;
+        pdf.text('···', dx, baseline + size * 0.95, { align: 'left', baseline: 'alphabetic' });
+      } else {
+        const rx =
+          plan.align === 'left' ? plan.x * k : plan.align === 'right' ? plan.x * k - width : plan.x * k - width / 2;
+        pdf.rect(rx, baseline + size * 0.55, width, Math.max(0.15, size * 0.035), 'F');
+      }
+    }
+  }
+
+  pdf.setCharSpace(0);
+}
+
+/** The heart separator, filled as a path — no subset here carries U+2665. */
+function drawPdfHeart(
+  pdf: Pdf,
+  outline: Array<[number, number]>,
+  x: number,
+  baseline: number,
+  size: number,
+  color: [number, number, number]
+) {
+  if (!outline.length) return;
+  // the path's ink spans x 2..22 and y 3..21.35 inside its 24-unit box
+  const scale = (size * 0.62) / 18.35;
+  const point = (p: [number, number]): [number, number] => [
+    x + (p[0] - 2) * scale,
+    baseline - (21.35 - p[1]) * scale,
+  ];
+
+  const first = point(outline[0]);
+  const deltas: Array<[number, number]> = [];
+  let prev = first;
+  for (const raw of outline.slice(1)) {
+    const p = point(raw);
+    deltas.push([p[0] - prev[0], p[1] - prev[1]]);
+    prev = p;
+  }
+
+  pdf.setFillColor(color[0], color[1], color[2]);
+  pdf.lines(deltas, first[0], first[1], [1, 1], 'F', true);
+}
+
+function rgb(hex: string): [number, number, number] {
+  const n = hex.replace('#', '');
+  return [
+    parseInt(n.slice(0, 2), 16),
+    parseInt(n.slice(2, 4), 16),
+    parseInt(n.slice(4, 6), 16),
+  ];
 }
 
 /**
