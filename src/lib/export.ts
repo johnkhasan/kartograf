@@ -1,7 +1,7 @@
 import { Map as MLMap, type ErrorEvent } from 'maplibre-gl';
 import { buildMapStyle } from './mapStyle';
 import { applyCoupleLayers, coupleActive } from './couple';
-import { posterLines, posterScrim, posterTextBox } from './posterText';
+import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
   CoupleState,
@@ -275,6 +275,47 @@ async function drawMarkers(
     ctx.fill(path);
     ctx.restore();
   }
+
+  drawMarkerLabels(ctx, map, job, rect);
+}
+
+/**
+ * Captions under the markers, drawn after every icon so a label is never
+ * covered by a neighbouring pin. The halo keeps them readable over busy map
+ * detail, matching the text-shadow the preview uses.
+ */
+function drawMarkerLabels(
+  ctx: CanvasRenderingContext2D,
+  map: MLMap,
+  job: ExportJob,
+  rect: FrameRect
+) {
+  const labelled = job.markers.filter((m) => m.label?.trim());
+  if (!labelled.length) return;
+
+  const scale = rect.w / job.previewMapWidth;
+  const size = Math.max(7, rect.w * 0.016 * job.styleOpts.textScale);
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = `500 ${size}px "${job.styleOpts.font}", sans-serif`;
+  setLetterSpacing(ctx, size * 0.12);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.5;
+  ctx.strokeStyle = job.theme.bg;
+
+  for (const m of labelled) {
+    const p = map.project([m.lng, m.lat]);
+    const x = rect.x + p.x;
+    const y = rect.y + p.y + job.markerSize * scale * 0.62;
+    ctx.strokeText(m.label, x, y);
+    ctx.fillStyle = job.theme.text;
+    ctx.fillText(m.label, x, y);
+  }
+
+  setLetterSpacing(ctx, 0);
+  ctx.restore();
 }
 
 async function drawOverlay(
@@ -288,10 +329,10 @@ async function drawOverlay(
   const framed = styleOpts.frame;
 
   const { title, subtitle, meta } = posterLines({ styleOpts, location, couple: job.couple });
-
-  const cityPx = w * 0.052;
-  const countryPx = w * 0.022;
-  const coordsPx = w * 0.018;
+  const metrics = posterTextMetrics(styleOpts, w);
+  const cityPx = metrics.title.size;
+  const countryPx = metrics.subtitle.size;
+  const coordsPx = metrics.meta.size;
 
   await Promise.all([
     document.fonts.load(`700 ${cityPx}px "${font}"`),
@@ -315,36 +356,36 @@ async function drawOverlay(
       size: coordsPx,
       weight: 400,
       alpha: 0.75,
-      spacing: 0.18,
+      tracking: metrics.meta.tracking,
       gapAbove: coordsPx * 2.1,
-      underline: false,
+      rule: false,
     },
     subtitle && {
       text: subtitle,
       size: countryPx,
       weight: 400,
       alpha: 0.85,
-      spacing: 0.35,
+      tracking: metrics.subtitle.tracking,
       gapAbove: countryPx * 2.6,
-      underline: true,
+      rule: styleOpts.divider !== 'none',
     },
     title && {
       text: title,
       size: cityPx,
       weight: 700,
       alpha: 1,
-      spacing: 0.32,
+      tracking: metrics.title.tracking,
       gapAbove: 0,
-      underline: false,
+      rule: false,
     },
   ].filter(Boolean) as Array<{
     text: string;
     size: number;
     weight: number;
     alpha: number;
-    spacing: number;
+    tracking: number;
     gapAbove: number;
-    underline: boolean;
+    rule: boolean;
   }>;
 
   if (!stack.length) {
@@ -377,17 +418,26 @@ async function drawOverlay(
 
   for (const item of stack) {
     ctx.font = `${item.weight} ${item.size}px "${font}", sans-serif`;
-    setLetterSpacing(ctx, item.size * item.spacing);
+    setLetterSpacing(ctx, item.tracking);
     ctx.fillStyle = item.alpha === 1 ? theme.text : hexA(theme.text, item.alpha);
     ctx.fillText(item.text, cx, y);
 
-    if (item.underline) {
-      // matches the preview, where the rule is the subtitle's own underline
-      // and therefore exactly as wide as the text
-      const tw = ctx.measureText(item.text).width;
-      const x = box.align === 'left' ? cx : box.align === 'right' ? cx - tw : cx - tw / 2;
-      ctx.fillStyle = theme.accent;
-      ctx.fillRect(x, y + item.size * 0.55, tw, Math.max(1.5, w * 0.0018));
+    if (item.rule) {
+      if (styleOpts.divider === 'dots') {
+        // the preview stacks the dots as their own row between the subtitle
+        // and the line below it; on the canvas that is just under this
+        // baseline, well clear of the next line's
+        setLetterSpacing(ctx, item.size * 0.5);
+        ctx.fillStyle = theme.accent;
+        ctx.fillText('···', cx, y + item.size * 0.95);
+      } else {
+        // matches the preview, where the rule is the subtitle's own underline
+        // and therefore exactly as wide as the text
+        const tw = ctx.measureText(item.text).width;
+        const x = box.align === 'left' ? cx : box.align === 'right' ? cx - tw : cx - tw / 2;
+        ctx.fillStyle = theme.accent;
+        ctx.fillRect(x, y + item.size * 0.55, tw, Math.max(1.5, w * 0.0018));
+      }
     }
 
     y -= item.gapAbove;

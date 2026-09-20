@@ -20,6 +20,8 @@ export default function MarkersPanel() {
     uploadedMarkers,
     addUploadedMarker,
     removeUploadedMarker,
+    setMarkerLabel,
+    removeMarker,
   } = useStore();
 
   const theme = useActiveTheme();
@@ -129,9 +131,41 @@ export default function MarkersPanel() {
       </div>
 
       {markers.length > 0 && (
-        <button className="btn btn-danger" onClick={clearMarkers}>
-          {t.clearMarkers(markers.length)}
-        </button>
+        <>
+          <div className="group-label">{t.markerLabels}</div>
+          <ul className="mk-list">
+            {markers.map((m) => (
+              <li key={m.id} className="mk-row">
+                <span
+                  className="mk-icon"
+                  // the same glyph as on the poster, so a row is matched to a
+                  // pin by sight rather than by counting
+                  dangerouslySetInnerHTML={{
+                    __html: m.icon.startsWith('up:')
+                      ? `<img src="${
+                          uploadedMarkers.find((u) => u.id === m.icon.slice(3))?.dataUrl ?? ''
+                        }" width="16" height="16" style="object-fit:contain"/>`
+                      : markerSvg(m.icon as MarkerIconId, color, 16),
+                  }}
+                />
+                <input
+                  className="text-input mk-input"
+                  placeholder={t.markerLabelPlaceholder}
+                  value={m.label ?? ''}
+                  maxLength={28}
+                  onChange={(e) => setMarkerLabel(m.id, e.target.value)}
+                />
+                <button className="mk-del" onClick={() => removeMarker(m.id)} title={t.deleteLabel}>
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <button className="btn btn-danger" onClick={clearMarkers}>
+            {t.clearMarkers(markers.length)}
+          </button>
+        </>
       )}
     </div>
   );

@@ -111,15 +111,71 @@ export default function StylePanel() {
       />
       <button
         className="btn btn-secondary"
-        onClick={() => setStyleOpts({ textPos: 'bottom', textAlign: 'center', textOffset: 0 })}
+        onClick={() =>
+          setStyleOpts({
+            textPos: 'bottom',
+            textAlign: 'center',
+            textOffset: 0,
+            textScale: 1,
+            textTracking: 1,
+          })
+        }
         disabled={
           styleOpts.textPos === 'bottom' &&
           styleOpts.textAlign === 'center' &&
-          styleOpts.textOffset === 0
+          styleOpts.textOffset === 0 &&
+          styleOpts.textScale === 1 &&
+          styleOpts.textTracking === 1
         }
       >
         {t.resetLabel}
       </button>
+
+      <div className="group-label">{t.typography}</div>
+      <div className="slider-row">
+        <span className="slider-label">{t.textSize}</span>
+        <span className="slider-value">{Math.round(styleOpts.textScale * 100)}%</span>
+      </div>
+      <input
+        type="range"
+        min={0.7}
+        max={1.4}
+        step={0.02}
+        value={styleOpts.textScale}
+        onChange={(e) => setStyleOpts({ textScale: parseFloat(e.target.value) })}
+        className="slider"
+      />
+      <div className="slider-row">
+        <span className="slider-label">{t.textTracking}</span>
+        <span className="slider-value">{Math.round(styleOpts.textTracking * 100)}%</span>
+      </div>
+      <input
+        type="range"
+        min={0.3}
+        max={1.8}
+        step={0.05}
+        value={styleOpts.textTracking}
+        onChange={(e) => setStyleOpts({ textTracking: parseFloat(e.target.value) })}
+        className="slider"
+      />
+      <div className="group-label">{t.divider}</div>
+      <div className="seg-row">
+        {(
+          [
+            ['line', t.dividerLine],
+            ['dots', t.dividerDots],
+            ['none', t.dividerNone],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            className={'seg' + (styleOpts.divider === id ? ' active' : '')}
+            onClick={() => setStyleOpts({ divider: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="group-label">{t.font}</div>
       <div className="font-list">

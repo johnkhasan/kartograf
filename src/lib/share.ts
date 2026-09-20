@@ -62,6 +62,9 @@ const STYLE_KEYS: Record<string, string> = {
   textPos: 'tp',
   textAlign: 'tl',
   textOffset: 'to',
+  textScale: 'ts',
+  textTracking: 'tk',
+  divider: 'dv',
 };
 const LAYER_KEYS: Record<string, string> = {
   landcover: 'lc',
@@ -93,7 +96,7 @@ const COUPLE_POINT_KEYS: Record<string, string> = {
   lng: 'g',
   label: 'l',
 };
-const MARKER_KEYS: Record<string, string> = { icon: 'i', lng: 'g', lat: 'a' };
+const MARKER_KEYS: Record<string, string> = { icon: 'i', lng: 'g', lat: 'a', label: 'l' };
 
 function invert(m: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(m).map(([k, v]) => [v, k]));

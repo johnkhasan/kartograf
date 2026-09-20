@@ -56,6 +56,7 @@ export interface AppState {
   setLayers: (patch: Partial<LayerToggles>) => void;
   addMarker: (icon: MarkerIcon, lng: number, lat: number) => void;
   moveMarker: (id: string, lng: number, lat: number) => void;
+  setMarkerLabel: (id: string, label: string) => void;
   removeMarker: (id: string) => void;
   clearMarkers: () => void;
   addUploadedMarker: (dataUrl: string) => string;
@@ -170,6 +171,9 @@ export const DEFAULT_STATE: Pick<
     textPos: 'bottom',
     textAlign: 'center',
     textOffset: 0,
+    textScale: 1,
+    textTracking: 1,
+    divider: 'line',
   },
   layers: {
     landcover: true,
@@ -224,10 +228,14 @@ export const useStore = create<AppState>()(
         setStyleOpts: (patch) => set((s) => ({ styleOpts: { ...s.styleOpts, ...patch } })),
         setLayers: (patch) => set((s) => ({ layers: { ...s.layers, ...patch } })),
         addMarker: (icon, lng, lat) =>
-          set((s) => ({ markers: [...s.markers, { id: genId(), icon, lng, lat }] })),
+          set((s) => ({ markers: [...s.markers, { id: genId(), icon, lng, lat, label: '' }] })),
         moveMarker: (id, lng, lat) =>
           set((s) => ({
             markers: s.markers.map((m) => (m.id === id ? { ...m, lng, lat } : m)),
+          })),
+        setMarkerLabel: (id, label) =>
+          set((s) => ({
+            markers: s.markers.map((m) => (m.id === id ? { ...m, label } : m)),
           })),
         removeMarker: (id) => set((s) => ({ markers: s.markers.filter((m) => m.id !== id) })),
         clearMarkers: () => set({ markers: [] }),

@@ -11,7 +11,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useStore, activeTheme, useActiveTheme } from '../store';
 import { buildMapStyle } from '../lib/mapStyle';
 import { applyCoupleLayers } from '../lib/couple';
-import { posterLines, posterScrim, posterTextBox } from '../lib/posterText';
+import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from '../lib/posterText';
 import { markerSvg } from '../data/markerIcons';
 import { FRAME_PAD, FRAME_BOTTOM } from '../lib/export';
 import { getLayout } from '../data/layouts';
@@ -254,6 +254,7 @@ export default function PosterPreview() {
     }
 
     const color = markerColor ?? theme.accent;
+    const labelPx = Math.max(7, posterSize.w * 0.016 * styleOpts.textScale);
     for (const m of markers) {
       let mk = existing.get(m.id);
       if (!mk) {
@@ -267,6 +268,12 @@ export default function PosterPreview() {
 
         const icon = document.createElement('span');
         icon.className = 'poster-marker-icon';
+
+        // absolutely positioned so the marker element stays icon-sized —
+        // MapLibre centres the element on the point, and a caption in the
+        // flow would drag the icon off its coordinates
+        const caption = document.createElement('span');
+        caption.className = 'poster-marker-label';
 
         // Touch has no double-click, so a marker is tapped to select and
         // then removed with this badge. Double-click still works with a
@@ -283,7 +290,7 @@ export default function PosterPreview() {
           removeMarker(m.id);
         });
 
-        inner.append(icon, del);
+        inner.append(icon, caption, del);
         el.append(inner);
 
         let dragged = false;
@@ -322,6 +329,17 @@ export default function PosterPreview() {
       }
       const el = mk.getElement();
       el.classList.toggle('selected', !readOnly && selectedMarker === m.id);
+
+      const caption = el.querySelector('.poster-marker-label') as HTMLElement;
+      caption.textContent = m.label ?? '';
+      caption.style.display = m.label ? 'block' : 'none';
+      caption.style.color = theme.text;
+      caption.style.fontFamily = `'${styleOpts.font}', sans-serif`;
+      caption.style.fontSize = `${labelPx}px`;
+      caption.style.letterSpacing = `${labelPx * 0.12}px`;
+      caption.style.top = `${markerSize * 0.62}px`;
+      caption.style.textShadow = `0 1px 3px ${theme.bg}, 0 0 6px ${theme.bg}`;
+
       const icon = el.querySelector('.poster-marker-icon') as HTMLElement;
       if (m.icon.startsWith('up:')) {
         const up = uploadedMarkers.find((u) => u.id === m.icon.slice(3));
@@ -338,17 +356,20 @@ export default function PosterPreview() {
     markerSize,
     markerColor,
     theme.accent,
+    theme.text,
+    theme.bg,
     readOnly,
     selectedMarker,
+    posterSize.w,
+    styleOpts.font,
+    styleOpts.textScale,
     moveMarker,
     removeMarker,
   ]);
 
   const w = posterSize.w;
   const framed = styleOpts.frame;
-  const cityPx = w * 0.052;
-  const countryPx = w * 0.022;
-  const coordsPx = w * 0.018;
+  const metrics = posterTextMetrics(styleOpts, w);
 
   const lines = posterLines({ styleOpts, location, couple });
   const box = posterTextBox({ styleOpts, width: w, height: posterSize.h });
@@ -426,7 +447,12 @@ export default function PosterPreview() {
           {lines.title && (
             <div
               className="poster-city"
-              style={{ color: theme.text, fontSize: cityPx, letterSpacing: '0.32em' }}
+              style={{
+                color: theme.text,
+                fontSize: metrics.title.size,
+                letterSpacing: metrics.title.tracking,
+                textIndent: metrics.title.tracking,
+              }}
             >
               {lines.title}
             </div>
@@ -436,18 +462,40 @@ export default function PosterPreview() {
               className="poster-country"
               style={{
                 color: theme.text,
-                fontSize: countryPx,
-                letterSpacing: '0.35em',
-                borderBottom: `2px solid ${theme.accent}`,
+                fontSize: metrics.subtitle.size,
+                letterSpacing: metrics.subtitle.tracking,
+                textIndent: metrics.subtitle.tracking,
+                borderBottom:
+                  styleOpts.divider === 'line'
+                    ? `2px solid ${theme.accent}`
+                    : undefined,
               }}
             >
               {lines.subtitle}
             </div>
           )}
+          {lines.subtitle && styleOpts.divider === 'dots' && (
+            <div
+              className="poster-divider"
+              style={{
+                color: theme.accent,
+                fontSize: metrics.subtitle.size,
+                letterSpacing: metrics.subtitle.size * 0.5,
+                textIndent: metrics.subtitle.size * 0.5,
+              }}
+            >
+              ···
+            </div>
+          )}
           {lines.meta && (
             <div
               className="poster-coords"
-              style={{ color: theme.text, fontSize: coordsPx, letterSpacing: '0.18em' }}
+              style={{
+                color: theme.text,
+                fontSize: metrics.meta.size,
+                letterSpacing: metrics.meta.tracking,
+                textIndent: metrics.meta.tracking,
+              }}
             >
               {lines.meta}
             </div>

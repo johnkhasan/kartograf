@@ -68,7 +68,30 @@ export function posterLines(s: PosterTextInput): PosterLines {
 }
 
 /** Font sizes of the three text slots, as fractions of the poster width. */
-export const TEXT_SCALE = { title: 0.052, subtitle: 0.022, meta: 0.018 } as const;
+const SLOT_SIZE = { title: 0.052, subtitle: 0.022, meta: 0.018 } as const;
+/** Built-in letter spacing per slot, as a fraction of that slot's size. */
+const SLOT_TRACKING = { title: 0.32, subtitle: 0.35, meta: 0.18 } as const;
+
+export interface TextMetrics {
+  title: { size: number; tracking: number };
+  subtitle: { size: number; tracking: number };
+  meta: { size: number; tracking: number };
+}
+
+/**
+ * Pixel type sizes and letter spacing for a poster of this width, after the
+ * user's scale and tracking multipliers. Shared so the canvas export can't
+ * drift from the preview.
+ */
+export function posterTextMetrics(styleOpts: StyleOptions, width: number): TextMetrics {
+  const scale = styleOpts.textScale;
+  const track = styleOpts.textTracking;
+  const slot = (k: keyof typeof SLOT_SIZE) => {
+    const size = width * SLOT_SIZE[k] * scale;
+    return { size, tracking: size * SLOT_TRACKING[k] * track };
+  };
+  return { title: slot('title'), subtitle: slot('subtitle'), meta: slot('meta') };
+}
 
 /** Distance of the text block from its anchored edge, as a fraction of height. */
 const EDGE = { plain: 0.042, framed: 0.026 } as const;

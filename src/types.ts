@@ -56,6 +56,8 @@ export interface PosterMarker {
   icon: MarkerIcon;
   lng: number;
   lat: number;
+  /** caption drawn under the icon on the poster; empty = none */
+  label: string;
 }
 
 export interface UploadedMarker {
@@ -118,6 +120,12 @@ export interface StyleOptions {
   textAlign: 'left' | 'center' | 'right';
   /** nudge along the vertical, in % of poster height (positive = downwards) */
   textOffset: number;
+  /** multiplier on every text size, 1 = the built-in proportions */
+  textScale: number;
+  /** multiplier on the built-in letter spacing */
+  textTracking: number;
+  /** the accent rule under the subtitle */
+  divider: 'line' | 'dots' | 'none';
 }
 
 export interface ExportSettings {

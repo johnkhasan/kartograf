@@ -1702,3 +1702,65 @@ body {
   color: var(--danger);
   border-color: var(--danger);
 }
+
+/* ---------- marker captions ---------- */
+.poster-marker-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ---------- marker label list ---------- */
+.mk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mk-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mk-icon {
+  flex: none;
+  display: flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.mk-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+.mk-del {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel2);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mk-del:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
