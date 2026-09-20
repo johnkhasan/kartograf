@@ -69,6 +69,33 @@ export default function Sidebar() {
     return () => root.style.setProperty('--sheet-h', '0px');
   }, [isMobile, Panel]);
 
+  // The sheet grows upwards from the rail, so how tall it may get is simply
+  // how much room there is above the rail — anything more and its own header
+  // (grip, title, close button) slides under the top bar. Measured rather
+  // than derived, because the action bar below the rail changes height with
+  // the viewport and the safe-area inset.
+  useEffect(() => {
+    if (!isMobile) return;
+    const publish = () => {
+      const top = railRef.current?.getBoundingClientRect().top;
+      if (top == null) return;
+      // 48px top bar + 8px of breathing room under it
+      document.documentElement.style.setProperty(
+        '--sheet-max',
+        `${Math.max(160, Math.round(top - 56))}px`
+      );
+    };
+    const frame = requestAnimationFrame(publish);
+    window.addEventListener('resize', publish);
+    window.addEventListener('orientationchange', publish);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', publish);
+      window.removeEventListener('orientationchange', publish);
+      document.documentElement.style.removeProperty('--sheet-max');
+    };
+  }, [isMobile, Panel]);
+
   // a fresh panel always opens at its resting height
   useEffect(() => setExpanded(false), [activePanel]);
 

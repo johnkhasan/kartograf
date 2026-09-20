@@ -1239,7 +1239,13 @@ body {
     left: 0;
     right: 0;
     width: auto;
-    height: 46dvh;
+    /* never taller than the room above the rail, or the sheet's own header
+       ends up behind the top bar; the fallback covers the first paint,
+       before Sidebar has measured (48 top bar + 60 rail + ~62 action bar
+       + 8 gap) */
+    --sheet-cap: var(--sheet-max, calc(100dvh - 178px));
+    height: min(46dvh, var(--sheet-cap));
+    max-height: var(--sheet-cap);
     z-index: 5;
     overscroll-behavior: contain;
     border-top: 1px solid var(--border);
@@ -1249,11 +1255,10 @@ body {
   }
 
   /* expanded fits the panel's own content rather than always ballooning to
-     86dvh — a short panel would otherwise open onto a screen of empty space */
+     the cap — a short panel would otherwise open onto a screen of empty space */
   .panel-expanded {
     height: auto;
-    min-height: 46dvh;
-    max-height: 86dvh;
+    min-height: min(46dvh, var(--sheet-cap));
   }
 
   /* while a finger is on the handle the sheet tracks it 1:1 */
