@@ -1,8 +1,10 @@
 import { Map as MLMap, type ErrorEvent } from 'maplibre-gl';
 import { buildMapStyle } from './mapStyle';
-import { formatCoords } from './geocode';
+import { applyCoupleLayers, coupleActive } from './couple';
+import { posterLines, posterScrim, posterTextBox } from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
+  CoupleState,
   ExportSettings,
   ExportStage,
   LayerToggles,
@@ -31,6 +33,7 @@ export interface ExportJob {
   markerColor: string | null;
   route: [number, number][];
   routeWidth: number;
+  couple: CoupleState;
   settings: ExportSettings;
   onProgress?: (stage: ExportStage) => void;
 }
@@ -56,11 +59,23 @@ export interface FrameRect {
 export const FRAME_PAD = 0.05; // of width, top/left/right
 export const FRAME_BOTTOM = 0.17; // of height, text band
 
-export function frameRect(w: number, h: number, framed: boolean): FrameRect {
+/**
+ * The map inset of a framed poster. The wide band is the one the text sits
+ * in, so it moves to the top when the text is anchored there — otherwise a
+ * top-anchored title would land on the map inside the frame.
+ */
+export function frameRect(
+  w: number,
+  h: number,
+  framed: boolean,
+  textPos: StyleOptions['textPos'] = 'bottom'
+): FrameRect {
   if (!framed) return { x: 0, y: 0, w, h };
   const pad = Math.round(w * FRAME_PAD);
-  const bottom = Math.round(h * FRAME_BOTTOM);
-  return { x: pad, y: pad, w: w - pad * 2, h: h - pad - bottom };
+  const band = Math.round(h * FRAME_BOTTOM);
+  const top = textPos === 'top' ? band : pad;
+  const bottom = textPos === 'top' ? pad : band;
+  return { x: pad, y: top, w: w - pad * 2, h: h - top - bottom };
 }
 
 export async function exportPoster(job: ExportJob): Promise<void> {
@@ -78,7 +93,7 @@ export async function exportPoster(job: ExportJob): Promise<void> {
   w = Math.round(w);
   h = Math.round(h);
 
-  const rect = frameRect(w, h, job.styleOpts.frame);
+  const rect = frameRect(w, h, job.styleOpts.frame, job.styleOpts.textPos);
 
   // Hidden container for the high-res render (sized to the map area only)
   const container = document.createElement('div');
@@ -128,6 +143,18 @@ export async function exportPoster(job: ExportJob): Promise<void> {
       });
     });
 
+    // the couple layers need the heart icon rasterized first, so they are
+    // added after the style has loaded rather than inside the load handler
+    await applyCoupleLayers(map, {
+      couple: job.couple,
+      iconColor: job.markerColor ?? theme.accent,
+      lineColor: theme.accent,
+      iconSize: job.markerSize * (rect.w / job.previewMapWidth),
+      lineWidth: job.couple.lineWidth * (rect.w / job.previewMapWidth),
+    });
+    map.triggerRepaint();
+    await waitIdle(map, 2000);
+
     // Give tiles a beat to settle
     await new Promise((r) => setTimeout(r, 300));
 
@@ -151,7 +178,11 @@ export async function exportPoster(job: ExportJob): Promise<void> {
     await drawOverlay(ctx, job, w, h);
 
     onProgress?.('saving');
-    const slug = job.location.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'poster';
+    // a couple poster is about the pair, so name the file after both places
+    const named = coupleActive(job.couple)
+      ? `${job.couple.a.name}-${job.couple.b.name}`
+      : job.location.name;
+    const slug = named.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'poster';
     const base = `kartograf-${slug}-${layout.id}`;
 
     if (settings.format === 'pdf') {
@@ -247,8 +278,7 @@ async function drawOverlay(
   const font = styleOpts.font;
   const framed = styleOpts.frame;
 
-  const title = (styleOpts.customTitle || location.name).toUpperCase();
-  const subtitle = (styleOpts.customSubtitle || location.country).toUpperCase();
+  const { title, subtitle, meta } = posterLines({ styleOpts, location, couple: job.couple });
 
   const cityPx = w * 0.052;
   const countryPx = w * 0.022;
@@ -260,46 +290,112 @@ async function drawOverlay(
   ]).catch(() => {});
 
   if (!framed && styleOpts.showOverlay) {
-    const grad = ctx.createLinearGradient(0, h * 0.62, 0, h);
-    grad.addColorStop(0, hexA(theme.bg, 0));
-    grad.addColorStop(0.55, hexA(theme.bg, 0.75));
-    grad.addColorStop(1, hexA(theme.bg, 0.96));
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    for (const stop of posterScrim(styleOpts)) {
+      grad.addColorStop(Math.max(0, Math.min(1, stop.at)), hexA(theme.bg, stop.alpha));
+    }
     ctx.fillStyle = grad;
-    ctx.fillRect(0, h * 0.62, w, h * 0.38);
+    ctx.fillRect(0, 0, w, h);
   }
 
-  ctx.textAlign = 'center';
+  // Drawn bottom-up, so the block has to be measured before it can be
+  // anchored anywhere other than the bottom edge.
+  const stack = [
+    meta && {
+      text: meta,
+      size: coordsPx,
+      weight: 400,
+      alpha: 0.75,
+      spacing: 0.18,
+      gapAbove: coordsPx * 2.1,
+      underline: false,
+    },
+    subtitle && {
+      text: subtitle,
+      size: countryPx,
+      weight: 400,
+      alpha: 0.85,
+      spacing: 0.35,
+      gapAbove: countryPx * 2.6,
+      underline: true,
+    },
+    title && {
+      text: title,
+      size: cityPx,
+      weight: 700,
+      alpha: 1,
+      spacing: 0.32,
+      gapAbove: 0,
+      underline: false,
+    },
+  ].filter(Boolean) as Array<{
+    text: string;
+    size: number;
+    weight: number;
+    alpha: number;
+    spacing: number;
+    gapAbove: number;
+    underline: boolean;
+  }>;
+
+  if (!stack.length) {
+    setLetterSpacing(ctx, 0);
+    return;
+  }
+
+  // distance from the bottom baseline to the top line's baseline, plus that
+  // line's cap height — i.e. how tall the block reads
+  const advance = stack.slice(0, -1).reduce((sum, item) => sum + item.gapAbove, 0);
+  const blockHeight = advance + stack[stack.length - 1].size;
+
+  const box = posterTextBox({ styleOpts, width: w, height: h });
+  // the preview anchors a CSS box; the canvas anchors the bottom baseline,
+  // which sits a little inside that box — the edge fractions differ by that
+  // descent, as they did before this was configurable
+  const bottomEdge = box.edge + (framed ? h * 0.009 : h * 0.013);
+
+  let y =
+    box.pos === 'bottom'
+      ? h - bottomEdge
+      : box.pos === 'top'
+        ? box.edge + blockHeight
+        : h / 2 + blockHeight / 2 + box.centerShift;
+
+  ctx.textAlign = box.align === 'center' ? 'center' : box.align;
   ctx.textBaseline = 'alphabetic';
-  const cx = w / 2;
-  let y = h - h * (framed ? 0.035 : 0.055);
+  const cx =
+    box.align === 'left' ? box.sidePad : box.align === 'right' ? w - box.sidePad : w / 2;
 
-  if (styleOpts.showCoords) {
-    ctx.font = `400 ${coordsPx}px "${font}", sans-serif`;
-    setLetterSpacing(ctx, coordsPx * 0.18);
-    ctx.fillStyle = hexA(theme.text, 0.75);
-    ctx.fillText(formatCoords(location.lat, location.lng), cx, y);
-    y -= coordsPx * 2.1;
-  }
+  for (const item of stack) {
+    ctx.font = `${item.weight} ${item.size}px "${font}", sans-serif`;
+    setLetterSpacing(ctx, item.size * item.spacing);
+    ctx.fillStyle = item.alpha === 1 ? theme.text : hexA(theme.text, item.alpha);
+    ctx.fillText(item.text, cx, y);
 
-  if (styleOpts.showCountry && subtitle) {
-    ctx.font = `400 ${countryPx}px "${font}", sans-serif`;
-    setLetterSpacing(ctx, countryPx * 0.35);
-    ctx.fillStyle = hexA(theme.text, 0.85);
-    ctx.fillText(subtitle, cx, y);
-    // accent underline
-    ctx.fillStyle = theme.accent;
-    ctx.fillRect(cx - w * 0.06, y + countryPx * 0.55, w * 0.12, Math.max(1.5, w * 0.0018));
-    y -= countryPx * 2.6;
-  }
+    if (item.underline) {
+      // matches the preview, where the rule is the subtitle's own underline
+      // and therefore exactly as wide as the text
+      const tw = ctx.measureText(item.text).width;
+      const x = box.align === 'left' ? cx : box.align === 'right' ? cx - tw : cx - tw / 2;
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(x, y + item.size * 0.55, tw, Math.max(1.5, w * 0.0018));
+    }
 
-  if (styleOpts.showCity) {
-    ctx.font = `700 ${cityPx}px "${font}", sans-serif`;
-    setLetterSpacing(ctx, cityPx * 0.32);
-    ctx.fillStyle = theme.text;
-    ctx.fillText(title, cx, y);
+    y -= item.gapAbove;
   }
 
   setLetterSpacing(ctx, 0);
+}
+
+/** Resolves on the map's next idle, or after `ms` if it never settles. */
+function waitIdle(map: MLMap, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(), ms);
+    map.once('idle', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 }
 
 function setLetterSpacing(ctx: CanvasRenderingContext2D, px: number) {

@@ -13,6 +13,8 @@ ma'lumotlaridan foydalanadi.
 - **Style** — shahar/davlat/koordinata matnini yoqish, 8 xil shrift
 - **Layers** — landcover/buildings/water/parks/roads/rail/aeroway qatlamlari + zoom slayderi
 - **Markers** — 6 ta ikon, sudrab ko'chirish, o'lchov va rang sozlash
+- **Juftlik** — sevishganlar rejimi: ikkita joy, orasida yoy yoki geodezik chiziq,
+  yurak belgilari va real masofa (km/mil) poster matnida
 - **Routes** — xaritada bosib marshrut chizish
 - **Download** — 1x/2x/3x sifatda, xarita + belgilar + matn birga eksport (300 DPI gacha)
 

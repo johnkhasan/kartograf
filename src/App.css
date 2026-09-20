@@ -10,6 +10,13 @@
   --accent2: #e3b04b;
   --danger: #e2606c;
   --mono: 'Space Grotesk', 'SF Mono', monospace;
+
+  /* translucent "glass" material used by the floating mobile bars */
+  --glass: rgba(17, 27, 46, 0.58);
+  --glass-strong: rgba(17, 27, 46, 0.74);
+  --glass-edge: rgba(255, 255, 255, 0.10);
+  --glass-sheen: rgba(255, 255, 255, 0.16);
+  --glass-blur: blur(22px) saturate(180%);
 }
 
 * {
@@ -44,8 +51,15 @@ body {
   height: 100vh;
   /* dvh tracks the browser's actual visible area, so content isn't sized
      against the taller "chrome collapsed" height mobile Safari reports
-     for 100vh, which pushed the bottom bar off-screen until you scrolled */
+     for 100vh, which pushed the bottom bar off-screen until you scrolled.
+     --vh is the measured window.innerHeight; taking the smaller of the two
+     covers browsers where dvh still comes out taller than what is on screen
+     (a horizontal scrollbar, or a window size dvh rounds up), which would
+     otherwise push the action bar below the fold again. */
   height: 100dvh;
+  height: min(100dvh, var(--vh, 100dvh));
+  /* nothing may spill past the visible box and drag the bars with it */
+  overflow: hidden;
 }
 
 /* ---------- top bar ---------- */
@@ -148,25 +162,88 @@ body {
   filter: brightness(1.1);
 }
 
-.lang-toggle {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  overflow: hidden;
+/* ---------- language dropdown ---------- */
+.lang-menu {
+  position: relative;
 }
 
-.lang-toggle button {
-  padding: 7px 10px;
-  background: none;
-  border: none;
+.lang-trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel2);
   color: var(--text-dim);
   font-family: inherit;
   font-size: 10.5px;
+  letter-spacing: 0.08em;
   cursor: pointer;
 }
 
-.lang-toggle button.active {
-  background: rgba(94, 177, 214, 0.15);
+.lang-trigger:hover,
+.lang-trigger.open {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.lang-trigger svg {
+  transition: transform 0.16s ease;
+}
+
+.lang-trigger.open svg {
+  transform: rotate(180deg);
+}
+
+.lang-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 150px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lang-option:hover {
+  background: var(--panel2);
+}
+
+.lang-option.active {
+  color: var(--accent);
+}
+
+.lang-code {
+  flex: none;
+  width: 22px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+.lang-option.active .lang-code {
   color: var(--accent);
 }
 
@@ -243,6 +320,11 @@ body {
 
 .panel-close:hover {
   color: var(--text);
+}
+
+/* drag handle — only rendered as a grip in the mobile bottom sheet */
+.sheet-handle {
+  display: none;
 }
 
 .panel-body {
@@ -769,9 +851,54 @@ body {
   pointer-events: none;
 }
 
+/* No `position` here: MapLibre positions the marker element itself with an
+   absolute + transform rule of the same specificity, and overriding it turns
+   the marker into a full-width block. The inner wrapper is what anchors the
+   delete badge instead. */
 .poster-marker {
   cursor: grab;
   line-height: 0;
+}
+
+.poster-marker-inner {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.poster-marker-icon {
+  display: block;
+  line-height: 0;
+}
+
+/* delete badge — revealed once a marker is tapped (touch has no dblclick) */
+.poster-marker-del {
+  display: none;
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.poster-marker.selected .poster-marker-del {
+  display: flex;
+}
+
+.poster-marker.selected .poster-marker-icon {
+  filter: drop-shadow(0 0 0 var(--accent)) drop-shadow(0 0 5px var(--accent));
 }
 
 .map-loading-overlay {
@@ -965,6 +1092,34 @@ body {
   margin-top: 0;
 }
 
+/* quick city chips in the opening dialog */
+.modal-label-sub {
+  margin-top: 2px;
+}
+
+.quick-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-place {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.quick-place:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .export-dialog .modal-label {
   font-size: 13px;
   font-weight: 700;
@@ -981,7 +1136,7 @@ body {
 /* ---------- mobile ---------- */
 @media (max-width: 860px) {
   body {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .brand-tag {
@@ -1002,33 +1157,72 @@ body {
     flex: 1;
   }
 
-  /* icon rail becomes a horizontal bar below the workspace; the panel
-     drawer stacks above it as a normal flex item (order: -1) rather than
-     position:fixed — mobile Chrome/Safari size fixed elements against the
-     larger "chrome collapsed" layout viewport, not what's actually
-     visible, which hid the rail underneath the drawer */
+  /* icon rail becomes a horizontal bar below the workspace. The panel is
+     absolutely positioned against the rail (position: relative) rather than
+     position: fixed — mobile Chrome/Safari size fixed elements against the
+     larger "chrome collapsed" layout viewport, not what's actually visible,
+     which hid the rail underneath the drawer. */
+  /* The bars stay in the normal column flow so they always occupy real
+     layout space and can never end up below the fold — positioning them
+     against a 100dvh box is exactly what put them off-screen in browsers
+     that report a dvh taller than the area actually on screen. The glass
+     still gets content behind it: the workspace is pulled past them with
+     negative margins (see below) and they paint on top. */
+  .app {
+    position: relative;
+  }
+
   .sidebar {
+    position: relative;
+    z-index: 10;
     order: 2;
     flex-direction: column;
     border-right: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--glass-edge);
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: inset 0 1px 0 var(--glass-sheen);
   }
 
   .rail {
     flex-direction: row;
     width: 100%;
     height: 58px;
+    background: none;
     padding: 0;
     overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
     border-right: none;
+    /* fade both ends so it reads as scrollable — nine tabs never fit */
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 14px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 14px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    );
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
   }
 
   .rail-btn {
     flex: 1;
-    min-width: 56px;
+    min-width: 58px;
     padding: 8px 0 6px;
     border-left: none;
     border-top: 2px solid transparent;
+    scroll-snap-align: center;
   }
 
   .rail-btn.active {
@@ -1036,17 +1230,92 @@ body {
     border-top-color: var(--accent);
   }
 
-  /* panel becomes a bottom drawer stacked above the rail */
+  /* the panel becomes a bottom sheet that floats over the poster: it sits
+     directly on top of the rail, keeps its own height, and can be dragged
+     down to dismiss or up to read a long panel in full */
   .panel {
-    position: relative;
-    order: -1;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
     width: auto;
-    max-height: 42vh;
-    max-height: 42dvh;
+    height: 46dvh;
     z-index: 5;
+    overscroll-behavior: contain;
     border-top: 1px solid var(--border);
-    border-radius: 14px 14px 0 0;
+    border-radius: 16px 16px 0 0;
     box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
+    transition: height 0.22s ease, transform 0.22s ease;
+  }
+
+  /* expanded fits the panel's own content rather than always ballooning to
+     86dvh — a short panel would otherwise open onto a screen of empty space */
+  .panel-expanded {
+    height: auto;
+    min-height: 46dvh;
+    max-height: 86dvh;
+  }
+
+  /* while a finger is on the handle the sheet tracks it 1:1 */
+  .panel-dragging {
+    transition: none;
+  }
+
+  .sheet-handle {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    background: var(--panel);
+    border-radius: 16px 16px 0 0;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sheet-grip {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  /* above the sticky grip, which otherwise paints over it */
+  .panel-close {
+    top: 4px;
+    right: 6px;
+    z-index: 2;
+    padding: 8px;
+  }
+
+  .panel-body {
+    padding-top: 6px;
+  }
+
+  /* Both bleed 20px past the bars. The poster keeps a 10px gutter of its
+     own, so the net effect is that its edge slides 10px under the glass —
+     that band is empty poster background (the lowest text sits ~4% up), so
+     nothing is hidden, but the glass now has the poster behind it instead
+     of flat chrome. A tall wallpaper layout fills the height and tucks
+     under both bars; a width-limited print layout stays clear of them. */
+  .layout-main {
+    margin-top: -20px;
+  }
+
+  .workspace {
+    margin-bottom: -20px;
+    padding-bottom: var(--sheet-h, 0px);
+  }
+
+  .topbar {
+    position: relative;
+    z-index: 20;
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-edge);
   }
 
   .summary {
@@ -1055,10 +1324,42 @@ body {
 
   .mobile-bar {
     display: flex;
-    gap: 8px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 20;
+    /* overlaps the rail's bottom padding so the capsule has the rail (and
+       the poster behind it) in its backdrop rather than flat chrome */
+    margin: -8px 10px calc(7px + env(safe-area-inset-bottom));
+    gap: 7px;
+    padding: 7px;
+    border: 1px solid var(--glass-edge);
+    border-radius: 22px;
+    background: var(--glass-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    /* drop shadow to lift it off the poster + a specular top edge */
+    box-shadow:
+      0 10px 34px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 var(--glass-sheen);
+  }
+
+  .mobile-bar .btn {
+    border-radius: 16px;
+    padding: 11px 14px;
+  }
+
+  .mobile-bar .btn-secondary,
+  .mobile-bar .btn:not(.btn-primary) {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--glass-edge);
+    color: var(--text);
+  }
+
+  /* the language menu inherits the same material so the chrome reads as one */
+  .lang-list {
+    background: var(--glass-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-color: var(--glass-edge);
   }
 
   .footer {
@@ -1090,16 +1391,39 @@ body {
     gap: 6px;
   }
 
+  /* touch targets: 15px icons with 7px of padding land around 29px, well
+     under the ~44px both platforms ask for */
   .topbar-btn {
-    padding: 7px 9px;
+    padding: 10px 11px;
   }
 
   .topbar-btn-label {
     display: none;
   }
 
-  .lang-toggle button {
-    padding: 7px 8px;
+  .lang-trigger {
+    padding: 10px 9px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .couple-chosen-clear {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* the two action labels stop fitting side by side around here and wrap onto
+   a second line, which makes the capsule twice as tall */
+@media (max-width: 370px) {
+  .mobile-bar .btn {
+    gap: 6px;
+    padding: 11px 8px;
+    font-size: 10px;
+    white-space: nowrap;
   }
 }
 
@@ -1111,4 +1435,120 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
+}
+
+/* ---------- couple panel ---------- */
+.couple-point {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--panel2);
+}
+
+.couple-point .group-label {
+  margin-top: 0;
+}
+
+.couple-chosen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.couple-chosen-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.couple-chosen-clear {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.couple-chosen-clear:hover {
+  background: var(--border);
+  color: var(--danger);
+}
+
+.couple-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.couple-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.couple-row .couple-current {
+  flex: none;
+  width: auto;
+  margin: 0;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+/* the A ↔ B link: a hairline with the swap control sitting in the middle */
+.couple-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.couple-link-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.couple-swap {
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.couple-swap:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.couple-swap:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.couple-distance {
+  padding: 10px 0 2px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent);
 }

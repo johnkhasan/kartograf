@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { reverseGeocode, searchPlaces } from '../lib/geocode';
 import { useT } from '../i18n';
+import { QUICK_PLACES } from '../data/quickPlaces';
 import type { GeoResult } from '../types';
 import { IconLogo } from './Icons';
+
+/** Autofocusing throws the on-screen keyboard up over the dialog on a phone. */
+const isTouch =
+  typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
 export default function LocationModal() {
   const { modalOpen, setModalOpen, setLocation } = useStore();
@@ -75,7 +80,7 @@ export default function LocationModal() {
         </div>
         <div className="modal-label">{t.chooseLocation}</div>
         <input
-          autoFocus
+          autoFocus={!isTouch}
           className="text-input"
           placeholder={t.searchPlaceholder}
           value={picked ? picked.displayName : query}
@@ -100,6 +105,27 @@ export default function LocationModal() {
           </ul>
         )}
         {error && <div className="error-note">{error}</div>}
+
+        {results.length === 0 && !picked && (
+          <>
+            <div className="modal-label modal-label-sub">{t.quickPlaces}</div>
+            <div className="quick-places">
+              {QUICK_PLACES.map((place) => (
+                <button
+                  key={place.name}
+                  className="quick-place"
+                  onClick={() => {
+                    setLocation(place);
+                    setModalOpen(false);
+                  }}
+                >
+                  {place.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <button className="btn btn-secondary" onClick={locateMe}>
           {t.getMyLocation}
         </button>

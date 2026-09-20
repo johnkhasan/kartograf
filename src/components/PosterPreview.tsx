@@ -10,7 +10,8 @@ import type { FeatureCollection } from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useStore, activeTheme, useActiveTheme } from '../store';
 import { buildMapStyle } from '../lib/mapStyle';
-import { formatCoords } from '../lib/geocode';
+import { applyCoupleLayers } from '../lib/couple';
+import { posterLines, posterScrim, posterTextBox } from '../lib/posterText';
 import { markerSvg } from '../data/markerIcons';
 import { FRAME_PAD, FRAME_BOTTOM } from '../lib/export';
 import { getLayout } from '../data/layouts';
@@ -25,7 +26,10 @@ export default function PosterPreview() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const domMarkersRef = useRef<Map<string, MLMarker>>(new Map());
+  const applyCoupleRef = useRef<() => void>(() => {});
   const [posterSize, setPosterSize] = useState({ w: 420, h: 594 });
+  /** Tapped marker, shown with a delete badge — touch has no double-click. */
+  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
 
   const t = useT();
@@ -45,6 +49,7 @@ export default function PosterPreview() {
     route,
     routeWidth,
     drawingRoute,
+    couple,
     viewMode,
     moveMarker,
     removeMarker,
@@ -59,8 +64,15 @@ export default function PosterPreview() {
     const el = wrapRef.current;
     if (!el) return;
     const compute = () => {
-      const availW = el.clientWidth - 48;
-      const availH = el.clientHeight - 48;
+      // clientWidth/Height include padding, and on mobile the workspace is
+      // padded by the open bottom sheet's height — subtract it so the poster
+      // is fitted to what is actually visible rather than sliding under it
+      const cs = getComputedStyle(el);
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const gutter = el.clientWidth < 700 ? 20 : 48;
+      const availW = el.clientWidth - padX - gutter;
+      const availH = el.clientHeight - padY - gutter;
       let h = availH;
       let w = h * layout.ratio;
       if (w > availW) {
@@ -97,6 +109,7 @@ export default function PosterPreview() {
     });
 
     map.on('click', (e: MapMouseEvent) => {
+      setSelectedMarker(null);
       if (useStore.getState().drawingRoute) {
         useStore.getState().addRoutePoint(e.lngLat.lng, e.lngLat.lat);
       }
@@ -124,11 +137,49 @@ export default function PosterPreview() {
         layout: { 'line-cap': 'round', 'line-join': 'round' },
       });
     };
-    map.on('load', addRouteLayer);
-    map.on('styledata', () => {
-      // re-add route layer after setStyle
-      if (map.isStyleLoaded() && !map.getSource('route')) addRouteLayer();
-    });
+    // the couple line + hearts live in map layers (not DOM markers) so the
+    // preview and the export map can be fed by the exact same code; layer
+    // work is async because the heart icon has to be rasterized first, so
+    // overlapping calls are collapsed into one trailing re-run
+    let coupleRunning = false;
+    let couplePending = false;
+    const applyCouple = () => {
+      if (coupleRunning) {
+        couplePending = true;
+        return;
+      }
+      coupleRunning = true;
+      const st = useStore.getState();
+      const th = activeTheme(st);
+      void applyCoupleLayers(map, {
+        couple: st.couple,
+        iconColor: st.markerColor ?? th.accent,
+        lineColor: th.accent,
+        iconSize: st.markerSize,
+        lineWidth: st.couple.lineWidth,
+      })
+        .catch(() => {})
+        .finally(() => {
+          coupleRunning = false;
+          if (couplePending) {
+            couplePending = false;
+            applyCouple();
+          }
+        });
+    };
+    applyCoupleRef.current = applyCouple;
+
+    // A theme or layer change goes through setStyle, which throws away every
+    // source, layer and image the app added — they have to be put back. That
+    // has to hang off 'style.load': after setStyle, 'styledata' only ever
+    // fires while isStyleLoaded() is still false, so a guard on that flag
+    // never runs (which is why routes used to vanish on a theme change).
+    const addOverlays = () => {
+      addRouteLayer();
+      applyCouple();
+    };
+    map.on('load', addOverlays);
+    map.on('style.load', addOverlays);
 
     mapRef.current = map;
     if (import.meta.env.DEV) {
@@ -182,6 +233,12 @@ export default function PosterPreview() {
     }
   }, [route, routeWidth, theme.accent, themeId, layers]);
 
+  // ---- couple line + endpoint hearts
+  useEffect(() => {
+    if (!mapRef.current) return;
+    applyCoupleRef.current();
+  }, [couple, markerSize, markerColor, theme.accent, themeId, layers]);
+
   // ---- DOM markers sync
   useEffect(() => {
     const map = mapRef.current;
@@ -202,17 +259,55 @@ export default function PosterPreview() {
       if (!mk) {
         const el = document.createElement('div');
         el.className = 'poster-marker';
-        // reads fresh state instead of closing over `readOnly` so a later
-        // Edit click (which re-creates nothing, just toggles draggable
-        // below) still un-blocks removal on this same marker instance
+
+        // MapLibre owns the outer element's position, so the badge is
+        // anchored to this inner wrapper, which shrinks to the icon
+        const inner = document.createElement('span');
+        inner.className = 'poster-marker-inner';
+
+        const icon = document.createElement('span');
+        icon.className = 'poster-marker-icon';
+
+        // Touch has no double-click, so a marker is tapped to select and
+        // then removed with this badge. Double-click still works with a
+        // mouse. Both read fresh state instead of closing over `readOnly`,
+        // so a later Edit click un-blocks removal on this same instance.
+        const del = document.createElement('button');
+        del.className = 'poster-marker-del';
+        del.type = 'button';
+        del.textContent = '✕';
+        del.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (useStore.getState().viewMode === 'view') return;
+          setSelectedMarker(null);
+          removeMarker(m.id);
+        });
+
+        inner.append(icon, del);
+        el.append(inner);
+
+        let dragged = false;
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (dragged) {
+            dragged = false;
+            return;
+          }
+          if (useStore.getState().viewMode === 'view') return;
+          setSelectedMarker((cur) => (cur === m.id ? null : m.id));
+        });
         el.addEventListener('dblclick', (ev) => {
           ev.stopPropagation();
           if (useStore.getState().viewMode === 'view') return;
           removeMarker(m.id);
         });
+
         mk = new MLMarker({ element: el, draggable: !readOnly })
           .setLngLat([m.lng, m.lat])
           .addTo(map);
+        mk.on('dragstart', () => {
+          dragged = true;
+        });
         mk.on('dragend', () => {
           const p = mk!.getLngLat();
           moveMarker(m.id, p.lng, p.lat);
@@ -226,13 +321,15 @@ export default function PosterPreview() {
         mk.setDraggable(!readOnly);
       }
       const el = mk.getElement();
+      el.classList.toggle('selected', !readOnly && selectedMarker === m.id);
+      const icon = el.querySelector('.poster-marker-icon') as HTMLElement;
       if (m.icon.startsWith('up:')) {
         const up = uploadedMarkers.find((u) => u.id === m.icon.slice(3));
-        el.innerHTML = up
+        icon.innerHTML = up
           ? `<img src="${up.dataUrl}" style="max-width:${markerSize}px;max-height:${markerSize}px;display:block" draggable="false"/>`
           : '';
       } else {
-        el.innerHTML = markerSvg(m.icon as MarkerIconId, color, markerSize);
+        icon.innerHTML = markerSvg(m.icon as MarkerIconId, color, markerSize);
       }
     }
   }, [
@@ -242,6 +339,7 @@ export default function PosterPreview() {
     markerColor,
     theme.accent,
     readOnly,
+    selectedMarker,
     moveMarker,
     removeMarker,
   ]);
@@ -252,13 +350,30 @@ export default function PosterPreview() {
   const countryPx = w * 0.022;
   const coordsPx = w * 0.018;
 
-  const title = (styleOpts.customTitle || location.name).toUpperCase();
-  const subtitle = (styleOpts.customSubtitle || location.country).toUpperCase();
+  const lines = posterLines({ styleOpts, location, couple });
+  const box = posterTextBox({ styleOpts, width: w, height: posterSize.h });
+
+  const flexAlign =
+    box.align === 'left' ? 'flex-start' : box.align === 'right' ? 'flex-end' : 'center';
+  const textPlacement =
+    box.pos === 'bottom'
+      ? { bottom: box.edge, top: 'auto' as const }
+      : box.pos === 'top'
+        ? { top: box.edge, bottom: 'auto' as const }
+        : {
+            top: '50%',
+            bottom: 'auto' as const,
+            transform: `translateY(calc(-50% + ${box.centerShift}px))`,
+          };
 
   const pad = Math.round(w * FRAME_PAD);
-  const bottomBand = Math.round(posterSize.h * FRAME_BOTTOM);
+  const band = Math.round(posterSize.h * FRAME_BOTTOM);
+  // the text band swaps to the top when the text is anchored there, matching
+  // frameRect() in lib/export.ts
   const mapRectStyle = framed
-    ? { top: pad, left: pad, right: pad, bottom: bottomBand }
+    ? styleOpts.textPos === 'top'
+      ? { top: band, left: pad, right: pad, bottom: pad }
+      : { top: pad, left: pad, right: pad, bottom: band }
     : { inset: 0 };
 
   return (
@@ -290,7 +405,9 @@ export default function PosterPreview() {
           <div
             className="poster-gradient"
             style={{
-              background: `linear-gradient(to bottom, ${theme.bg}00 0%, ${theme.bg}c0 55%, ${theme.bg}f5 100%)`,
+              background: `linear-gradient(to bottom, ${posterScrim(styleOpts)
+                .map((stop) => `${hexA(theme.bg, stop.alpha)} ${(stop.at * 100).toFixed(1)}%`)
+                .join(', ')})`,
             }}
           />
         )}
@@ -299,18 +416,22 @@ export default function PosterPreview() {
           className="poster-text"
           style={{
             fontFamily: `'${styleOpts.font}', sans-serif`,
-            bottom: framed ? '2.6%' : '4.2%',
+            alignItems: flexAlign,
+            textAlign: box.align,
+            paddingLeft: box.sidePad,
+            paddingRight: box.sidePad,
+            ...textPlacement,
           }}
         >
-          {styleOpts.showCity && (
+          {lines.title && (
             <div
               className="poster-city"
               style={{ color: theme.text, fontSize: cityPx, letterSpacing: '0.32em' }}
             >
-              {title}
+              {lines.title}
             </div>
           )}
-          {styleOpts.showCountry && subtitle && (
+          {lines.subtitle && (
             <div
               className="poster-country"
               style={{
@@ -320,15 +441,15 @@ export default function PosterPreview() {
                 borderBottom: `2px solid ${theme.accent}`,
               }}
             >
-              {subtitle}
+              {lines.subtitle}
             </div>
           )}
-          {styleOpts.showCoords && (
+          {lines.meta && (
             <div
               className="poster-coords"
               style={{ color: theme.text, fontSize: coordsPx, letterSpacing: '0.18em' }}
             >
-              {formatCoords(location.lat, location.lng)}
+              {lines.meta}
             </div>
           )}
         </div>
@@ -336,6 +457,14 @@ export default function PosterPreview() {
       </div>
     </div>
   );
+}
+
+function hexA(hex: string, alpha: number): string {
+  const n = hex.replace('#', '');
+  return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(
+    n.slice(4, 6),
+    16
+  )},${alpha})`;
 }
 
 /**

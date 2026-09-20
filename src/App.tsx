@@ -5,6 +5,7 @@ import SummaryPanel from './components/SummaryPanel';
 import ViewerPanel from './components/ViewerPanel';
 import LocationModal from './components/LocationModal';
 import ExportDialog from './components/ExportDialog';
+import LangMenu from './components/LangMenu';
 import { IconCrosshair, IconDownload, IconEdit, IconLogo, IconRedo, IconShare, IconUndo } from './components/Icons';
 import { useStore, undoHistory } from './store';
 import { decodeShare, shortShareUrl } from './lib/share';
@@ -13,8 +14,6 @@ import './App.css';
 
 export default function App() {
   const t = useT();
-  const lang = useStore((s) => s.lang);
-  const setLang = useStore((s) => s.setLang);
   const setExportDialogOpen = useStore((s) => s.setExportDialogOpen);
   const viewMode = useStore((s) => s.viewMode);
   const setViewMode = useStore((s) => s.setViewMode);
@@ -56,6 +55,20 @@ export default function App() {
     setSharing(true);
     try {
       const url = await shortShareUrl(useStore.getState());
+
+      // On a phone the native sheet is how a link actually gets passed on
+      // (Telegram, WhatsApp, Messages); copying to a clipboard the user then
+      // has to paste somewhere is the desktop behaviour.
+      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+        try {
+          await navigator.share({ title: 'Kartograf', url });
+          return;
+        } catch (e) {
+          // dismissing the sheet is not a failure worth falling back from
+          if ((e as DOMException)?.name === 'AbortError') return;
+        }
+      }
+
       try {
         await navigator.clipboard.writeText(url);
         setCopied(true);
@@ -68,6 +81,20 @@ export default function App() {
       setSharing(false);
     }
   };
+
+  // Publish the real visible height; the app box is clamped to it so the
+  // bottom bars can't be pushed off-screen by a dvh that reads taller.
+  useEffect(() => {
+    const publish = () =>
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+    publish();
+    window.addEventListener('resize', publish);
+    window.addEventListener('orientationchange', publish);
+    return () => {
+      window.removeEventListener('resize', publish);
+      window.removeEventListener('orientationchange', publish);
+    };
+  }, []);
 
   const recenter = () => {
     const s = useStore.getState();
@@ -105,20 +132,7 @@ export default function App() {
               </button>
             </>
           )}
-          <div className="lang-toggle">
-            <button
-              className={lang === 'uz' ? 'active' : ''}
-              onClick={() => setLang('uz')}
-            >
-              UZ
-            </button>
-            <button
-              className={lang === 'en' ? 'active' : ''}
-              onClick={() => setLang('en')}
-            >
-              EN
-            </button>
-          </div>
+          <LangMenu />
         </div>
       </header>
 

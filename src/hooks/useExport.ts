@@ -35,6 +35,7 @@ export function useExport() {
         markerColor: s.markerColor,
         route: s.route,
         routeWidth: s.routeWidth,
+        couple: s.couple,
         settings: s.settings,
         onProgress: setStage,
       });

@@ -1,4 +1,8 @@
-import type { StyleSpecification, LayerSpecification } from 'maplibre-gl';
+import type {
+  StyleSpecification,
+  LayerSpecification,
+  ExpressionSpecification,
+} from 'maplibre-gl';
 import type { Theme, LayerToggles } from '../types';
 
 const TILE_URL = 'https://tiles.openfreemap.org/planet';
@@ -66,6 +70,44 @@ export function buildMapStyle(theme: Theme, layers: LayerToggles): StyleSpecific
         'line-color': theme.water,
         'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 8, 0.5, 14, 3, 18, 8],
       },
+    });
+  }
+
+  if (layers.boundaries) {
+    // Administrative borders. Without these a zoomed-out poster (two places
+    // on different continents) is a near-empty field of color: roads and
+    // buildings carry the detail at city zooms, but nothing does below ~z6.
+    // `maritime` lines are dropped — they float in open water and read as
+    // stray marks on a poster.
+    const landBorder: ExpressionSpecification = ['!', ['to-boolean', ['get', 'maritime']]];
+
+    styleLayers.push({
+      id: 'boundary-state',
+      type: 'line',
+      source: 'omt',
+      'source-layer': 'boundary',
+      filter: ['all', ['==', ['get', 'admin_level'], 4], landBorder],
+      minzoom: 3,
+      paint: {
+        'line-color': theme.roadMid,
+        'line-width': ['interpolate', ['exponential', 1.3], ['zoom'], 3, 0.3, 8, 0.8, 14, 1.6],
+        'line-opacity': 0.35,
+        'line-dasharray': [3, 2],
+      },
+    });
+
+    styleLayers.push({
+      id: 'boundary-country',
+      type: 'line',
+      source: 'omt',
+      'source-layer': 'boundary',
+      filter: ['all', ['<=', ['get', 'admin_level'], 2], landBorder],
+      paint: {
+        'line-color': theme.roadMid,
+        'line-width': ['interpolate', ['exponential', 1.3], ['zoom'], 1, 0.5, 4, 0.9, 8, 1.6, 14, 3],
+        'line-opacity': 0.8,
+      },
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
     });
   }
 

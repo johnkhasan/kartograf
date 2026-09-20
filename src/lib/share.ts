@@ -15,6 +15,7 @@ const SHARE_KEYS = [
   'markerColor',
   'route',
   'routeWidth',
+  'couple',
   'settings',
 ] as const;
 
@@ -45,6 +46,7 @@ const TOP_KEYS: Record<string, string> = {
   routeWidth: 'rw',
   settings: 'se',
   markers: 'mk',
+  couple: 'cp',
 };
 
 const LOCATION_KEYS: Record<string, string> = { name: 'n', country: 'c', lat: 'a', lng: 'g' };
@@ -57,6 +59,9 @@ const STYLE_KEYS: Record<string, string> = {
   customTitle: 'ti',
   customSubtitle: 'su',
   frame: 'fr',
+  textPos: 'tp',
+  textAlign: 'tl',
+  textOffset: 'to',
 };
 const LAYER_KEYS: Record<string, string> = {
   landcover: 'lc',
@@ -66,8 +71,28 @@ const LAYER_KEYS: Record<string, string> = {
   roads: 'rd',
   rail: 'ra',
   aeroway: 'ae',
+  boundaries: 'bd',
 };
 const SETTINGS_KEYS: Record<string, string> = { scale: 'sc', format: 'fm' };
+const COUPLE_KEYS: Record<string, string> = {
+  enabled: 'e',
+  a: 'a',
+  b: 'b',
+  date: 'd',
+  units: 'u',
+  separator: 's',
+  showDistance: 'sd',
+  curve: 'cv',
+  dashed: 'dh',
+  lineWidth: 'w',
+};
+const COUPLE_POINT_KEYS: Record<string, string> = {
+  name: 'n',
+  country: 'c',
+  lat: 'a',
+  lng: 'g',
+  label: 'l',
+};
 const MARKER_KEYS: Record<string, string> = { icon: 'i', lng: 'g', lat: 'a' };
 
 function invert(m: Record<string, string>): Record<string, string> {
@@ -147,6 +172,13 @@ function packShare(s: AppState): Record<string, unknown> {
   const settingsDiff = diffObject(s.settings, DEFAULT_STATE.settings, SETTINGS_KEYS);
   if (Object.keys(settingsDiff).length) packed[TOP_KEYS.settings] = settingsDiff;
 
+  const coupleDiff = diffObject(s.couple, DEFAULT_STATE.couple, COUPLE_KEYS);
+  for (const side of ['a', 'b'] as const) {
+    const point = coupleDiff[COUPLE_KEYS[side]];
+    if (point) coupleDiff[COUPLE_KEYS[side]] = rename(point as object, COUPLE_POINT_KEYS);
+  }
+  if (Object.keys(coupleDiff).length) packed[TOP_KEYS.couple] = coupleDiff;
+
   // only built-in icon markers survive a share link; ids are regenerated on load
   const markers = s.markers.filter((m) => !m.icon.startsWith('up:'));
   if (markers.length) {
@@ -178,6 +210,18 @@ function unpackShare(packed: Record<string, unknown>): Partial<ShareState> {
         DEFAULT_STATE.settings,
         SETTINGS_KEYS
       );
+    } else if (key === 'couple') {
+      const couple = undiffObject(
+        value as Record<string, unknown>,
+        DEFAULT_STATE.couple,
+        COUPLE_KEYS
+      );
+      const invPoint = invert(COUPLE_POINT_KEYS);
+      for (const side of ['a', 'b'] as const) {
+        const point = couple[side];
+        if (point) couple[side] = rename(point, invPoint) as unknown as typeof point;
+      }
+      out.couple = couple;
     } else if (key === 'markers') {
       const invMarker = invert(MARKER_KEYS);
       out.markers = (value as Array<Record<string, unknown>>).map((m) => ({

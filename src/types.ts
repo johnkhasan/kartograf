@@ -63,6 +63,34 @@ export interface UploadedMarker {
   dataUrl: string;
 }
 
+export type DistanceUnit = 'km' | 'mi';
+
+/** One half of a couple poster: a place plus the person's name shown on it. */
+export interface CouplePoint {
+  name: string;
+  country: string;
+  lat: number;
+  lng: number;
+  /** person's name on the poster; empty = fall back to the place name */
+  label: string;
+}
+
+export interface CoupleState {
+  enabled: boolean;
+  a: CouplePoint | null;
+  b: CouplePoint | null;
+  /** free text shown next to the distance, e.g. a first-met date */
+  date: string;
+  units: DistanceUnit;
+  /** glyph between the two names in the poster title */
+  separator: string;
+  showDistance: boolean;
+  /** bowed flight-map style curve instead of the direct great-circle path */
+  curve: boolean;
+  dashed: boolean;
+  lineWidth: number;
+}
+
 export interface LayerToggles {
   landcover: boolean;
   buildings: boolean;
@@ -71,6 +99,7 @@ export interface LayerToggles {
   roads: boolean;
   rail: boolean;
   aeroway: boolean;
+  boundaries: boolean;
 }
 
 export interface StyleOptions {
@@ -84,6 +113,11 @@ export interface StyleOptions {
   customSubtitle: string;
   /** classic framed poster look (map inset on a solid border) */
   frame: boolean;
+  /** which edge the text block is anchored to */
+  textPos: 'top' | 'center' | 'bottom';
+  textAlign: 'left' | 'center' | 'right';
+  /** nudge along the vertical, in % of poster height (positive = downwards) */
+  textOffset: number;
 }
 
 export interface ExportSettings {
@@ -100,6 +134,7 @@ export type PanelId =
   | 'style'
   | 'layers'
   | 'markers'
+  | 'couple'
   | 'routes'
   | 'settings';
 

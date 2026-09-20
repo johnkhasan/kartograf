@@ -55,6 +55,72 @@ export default function StylePanel() {
         onChange={(e) => setStyleOpts({ customSubtitle: e.target.value })}
       />
 
+      <div className="group-label">{t.textLayout}</div>
+      <div className="seg-row">
+        {(
+          [
+            ['top', t.textPosTop],
+            ['center', t.textPosCenter],
+            ['bottom', t.textPosBottom],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            className={'seg' + (styleOpts.textPos === id ? ' active' : '')}
+            onClick={() => setStyleOpts({ textPos: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="group-label">{t.textAlignLabel}</div>
+      <div className="seg-row">
+        {(
+          [
+            ['left', t.textAlignLeft],
+            ['center', t.textAlignCenter],
+            ['right', t.textAlignRight],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            className={'seg' + (styleOpts.textAlign === id ? ' active' : '')}
+            onClick={() => setStyleOpts({ textAlign: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="slider-row">
+        <span className="slider-label">{t.textOffsetLabel}</span>
+        <span className="slider-value">
+          {styleOpts.textOffset > 0 ? '+' : ''}
+          {styleOpts.textOffset}%
+        </span>
+      </div>
+      <input
+        type="range"
+        min={-25}
+        max={25}
+        step={0.5}
+        value={styleOpts.textOffset}
+        onChange={(e) => setStyleOpts({ textOffset: parseFloat(e.target.value) })}
+        className="slider"
+      />
+      <button
+        className="btn btn-secondary"
+        onClick={() => setStyleOpts({ textPos: 'bottom', textAlign: 'center', textOffset: 0 })}
+        disabled={
+          styleOpts.textPos === 'bottom' &&
+          styleOpts.textAlign === 'center' &&
+          styleOpts.textOffset === 0
+        }
+      >
+        {t.resetLabel}
+      </button>
+
       <div className="group-label">{t.font}</div>
       <div className="font-list">
         {FONTS.map((f) => (

@@ -50,6 +50,12 @@ export const IconMarker = (p: IconProps) => (
   </svg>
 );
 
+export const IconHeart = (p: IconProps) => (
+  <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 20.3l-1.2-1.1C6.1 15 3 12.2 3 8.8 3 6.1 5.1 4 7.8 4c1.5 0 3 .7 3.9 1.9h.6C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6.1 21 8.8c0 3.4-3.1 6.2-7.8 10.4l-1.2 1.1z" />
+  </svg>
+);
+
 export const IconRoute = (p: IconProps) => (
   <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <circle cx="6" cy="19" r="2" />
@@ -117,6 +123,12 @@ export const IconShare = (p: IconProps) => (
     <circle cx="18" cy="19" r="2.5" />
     <line x1="8.2" y1="10.8" x2="15.8" y2="6.2" />
     <line x1="8.2" y1="13.2" x2="15.8" y2="17.8" />
+  </svg>
+);
+
+export const IconChevronDown = (p: IconProps) => (
+  <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="5 9 12 16 19 9" />
   </svg>
 );
 

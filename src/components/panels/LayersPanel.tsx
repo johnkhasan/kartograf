@@ -17,6 +17,7 @@ export default function LayersPanel() {
     { key: 'roads', label: t.layerRoads },
     { key: 'rail', label: t.colorRail },
     { key: 'aeroway', label: t.colorAeroway },
+    { key: 'boundaries', label: t.layerBoundaries },
   ];
 
   return (

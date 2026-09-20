@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { temporal } from 'zundo';
 import { getTheme } from './data/themes';
 import type {
+  CoupleState,
+  CouplePoint,
   ExportSettings,
   Lang,
   LayerToggles,
@@ -31,6 +33,7 @@ export interface AppState {
   route: [number, number][];
   routeWidth: number;
   drawingRoute: boolean;
+  couple: CoupleState;
   settings: ExportSettings;
   activePanel: PanelId | null;
   modalOpen: boolean;
@@ -62,6 +65,8 @@ export interface AppState {
   clearRoute: () => void;
   setRouteWidth: (w: number) => void;
   setDrawingRoute: (on: boolean) => void;
+  setCouple: (patch: Partial<CoupleState>) => void;
+  setCouplePoint: (which: 'a' | 'b', point: CouplePoint | null) => void;
   setSettings: (patch: Partial<ExportSettings>) => void;
   setActivePanel: (panel: PanelId | null) => void;
   setModalOpen: (open: boolean) => void;
@@ -84,6 +89,7 @@ const HISTORY_KEYS = [
   'markerColor',
   'route',
   'routeWidth',
+  'couple',
   'settings',
 ] as const;
 
@@ -134,6 +140,7 @@ export const DEFAULT_STATE: Pick<
   | 'route'
   | 'routeWidth'
   | 'drawingRoute'
+  | 'couple'
   | 'settings'
   | 'activePanel'
   | 'modalOpen'
@@ -156,6 +163,9 @@ export const DEFAULT_STATE: Pick<
     customTitle: '',
     customSubtitle: '',
     frame: false,
+    textPos: 'bottom',
+    textAlign: 'center',
+    textOffset: 0,
   },
   layers: {
     landcover: true,
@@ -165,6 +175,7 @@ export const DEFAULT_STATE: Pick<
     roads: true,
     rail: true,
     aeroway: true,
+    boundaries: true,
   },
   markers: [],
   uploadedMarkers: [],
@@ -173,6 +184,18 @@ export const DEFAULT_STATE: Pick<
   route: [],
   routeWidth: 3,
   drawingRoute: false,
+  couple: {
+    enabled: false,
+    a: null,
+    b: null,
+    date: '',
+    units: 'km',
+    separator: '\u2665',
+    showDistance: true,
+    curve: true,
+    dashed: false,
+    lineWidth: 2.5,
+  },
   settings: { scale: 2, format: 'png' },
   activePanel: 'location',
   modalOpen: true,
@@ -222,6 +245,9 @@ export const useStore = create<AppState>()(
         clearRoute: () => set({ route: [] }),
         setRouteWidth: (w) => set({ routeWidth: w }),
         setDrawingRoute: (on) => set({ drawingRoute: on }),
+        setCouple: (patch) => set((s) => ({ couple: { ...s.couple, ...patch } })),
+        setCouplePoint: (which, point) =>
+          set((s) => ({ couple: { ...s.couple, [which]: point } })),
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
         setActivePanel: (panel) => set({ activePanel: panel }),
         setModalOpen: (open) => set({ modalOpen: open }),
@@ -239,6 +265,25 @@ export const useStore = create<AppState>()(
     {
       name: 'kartograf-v1',
       partialize: (s) => pick(s, PERSIST_KEYS),
+      /**
+       * The default merge is a shallow spread, so a stored `layers` (or
+       * `styleOpts`, ...) from an older build replaces the current default
+       * wholesale and any field added since comes back undefined — a new
+       * map layer would silently stay off for every returning visitor.
+       * Merging the nested objects one level down keeps their saved choices
+       * while filling in whatever is new.
+       */
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...p,
+          layers: { ...current.layers, ...p.layers },
+          styleOpts: { ...current.styleOpts, ...p.styleOpts },
+          settings: { ...current.settings, ...p.settings },
+          couple: { ...current.couple, ...p.couple },
+        };
+      },
     }
   )
 );
