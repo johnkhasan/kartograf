@@ -140,6 +140,20 @@ function defaultWhen(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/**
+ * Couple, collage and sky are three kinds of poster, not three layers: each
+ * replaces what the map area shows, so turning one on turns the others off.
+ * Without this, switching from a collage to a couple poster left the collage
+ * on screen and the couple line drawing onto a map nobody could see.
+ */
+function onlyMode(s: AppState, keep: 'couple' | 'collage' | 'starmap') {
+  return {
+    couple: keep === 'couple' ? s.couple : { ...s.couple, enabled: false },
+    collage: keep === 'collage' ? s.collage : { ...s.collage, enabled: false },
+    starmap: keep === 'starmap' ? s.starmap : { ...s.starmap, enabled: false },
+  };
+}
+
 let seq = 0;
 const genId = () => `${Date.now().toString(36)}${(++seq).toString(36)}`;
 
@@ -305,11 +319,26 @@ export const useStore = create<AppState>()(
             styleOpts: { ...s.styleOpts, ...tpl.style },
             layers: { ...s.layers, ...tpl.layers },
             couple: { ...s.couple, ...tpl.couple },
+            ...(tpl.couple?.enabled
+              ? { collage: { ...s.collage, enabled: false }, starmap: { ...s.starmap, enabled: false } }
+              : {}),
           })),
         loadProject: (state) => set({ ...state }),
-        setCouple: (patch) => set((s) => ({ couple: { ...s.couple, ...patch } })),
-        setCollage: (patch) => set((s) => ({ collage: { ...s.collage, ...patch } })),
-        setStarmap: (patch) => set((s) => ({ starmap: { ...s.starmap, ...patch } })),
+        setCouple: (patch) =>
+          set((s) => {
+            const couple = { ...s.couple, ...patch };
+            return patch.enabled ? { ...onlyMode(s, 'couple'), couple } : { couple };
+          }),
+        setCollage: (patch) =>
+          set((s) => {
+            const collage = { ...s.collage, ...patch };
+            return patch.enabled ? { ...onlyMode(s, 'collage'), collage } : { collage };
+          }),
+        setStarmap: (patch) =>
+          set((s) => {
+            const starmap = { ...s.starmap, ...patch };
+            return patch.enabled ? { ...onlyMode(s, 'starmap'), starmap } : { starmap };
+          }),
         addCollageCell: (location) =>
           set((s) => ({
             collage: {

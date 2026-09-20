@@ -81,7 +81,10 @@ export function useExport() {
 
   const handOff = async (file: File): Promise<boolean> => {
     try {
-      await navigator.share({ files: [file], title: 'Kartograf' });
+      // files only, with no title or text: given both, several targets —
+      // Telegram among them — take the text and drop the picture, which is
+      // the one thing the person actually asked to send
+      await navigator.share({ files: [file] });
       return true;
     } catch (e) {
       // dismissing the sheet is a decision, not a failure to recover from
