@@ -1,4 +1,6 @@
-import { decompressFromEncodedURIComponent } from 'lz-string';
+// lz-string is CommonJS with no ESM build, and Node's lexer can't pick named
+// exports out of its UMD wrapper — the default import is the whole module
+import LZString from 'lz-string';
 import { COUPLE_POINT_KEYS, LOCATION_KEYS, TOP_KEYS } from '../src/lib/shareKeys.js';
 import { getTheme } from '../src/data/themes.js';
 import type { Theme } from '../src/types';
@@ -59,7 +61,7 @@ const group = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 export function readShare(code: string): SharePreview | null {
   let packed: Record<string, unknown>;
   try {
-    const json = decompressFromEncodedURIComponent(code);
+    const json = LZString.decompressFromEncodedURIComponent(code);
     if (!json) return null;
     packed = JSON.parse(json) as Record<string, unknown>;
     if (!packed || typeof packed !== 'object') return null;
