@@ -32,10 +32,19 @@ const el = (
  * own palette, which the share code already holds. Set in the product's own
  * typeface, fetched from this same deployment.
  */
-/** The poster typeface, shipped with the function so a cold start never waits on a fetch. */
-let fontCache: Buffer | null = null;
-function posterFont(): Buffer {
-  if (!fontCache) fontCache = readFileSync('public/fonts/space-grotesk-700.ttf');
+/**
+ * The poster typeface, shipped with the function so a cold start never waits
+ * on a fetch — plus a fallback that carries the heart, which the primary face
+ * (like every other family here) does not.
+ */
+let fontCache: { poster: Buffer; fallback: Buffer } | null = null;
+function fonts() {
+  if (!fontCache) {
+    fontCache = {
+      poster: readFileSync('public/fonts/space-grotesk-700.ttf'),
+      fallback: readFileSync('public/fonts/merriweather-400.ttf'),
+    };
+  }
   return fontCache;
 }
 
@@ -122,7 +131,7 @@ export async function GET(request: Request) {
       background: theme.bg,
       color: theme.text,
       padding: '0 80px',
-      fontFamily: 'Poster',
+      fontFamily: 'Poster, Fallback',
     },
     children
   );
@@ -132,7 +141,10 @@ export async function GET(request: Request) {
   const svg = await satori(card as never, {
     width: WIDTH,
     height: HEIGHT,
-    fonts: [{ name: 'Poster', data: posterFont(), weight: 700, style: 'normal' }],
+    fonts: [
+      { name: 'Poster', data: fonts().poster, weight: 400, style: 'normal' },
+      { name: 'Fallback', data: fonts().fallback, weight: 400, style: 'normal' },
+    ],
   });
 
   const png = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } }).render().asPng();

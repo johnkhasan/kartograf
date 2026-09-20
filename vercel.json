@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/og.ts": {
-      "includeFiles": "{public/fonts/space-grotesk-700.ttf,node_modules/harfbuzzjs/*.wasm,node_modules/satori/*.wasm}"
+      "includeFiles": "{public/fonts/space-grotesk-700.ttf,public/fonts/merriweather-400.ttf,node_modules/harfbuzzjs/*.wasm,node_modules/satori/*.wasm}"
     }
   }
 }
