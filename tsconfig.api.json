@@ -22,6 +22,7 @@
     "api",
     "src/lib/shareKeys.ts",
     "src/data/themes.ts",
-    "src/types.ts"
+    "src/types.ts",
+    "middleware.ts"
   ]
 }
