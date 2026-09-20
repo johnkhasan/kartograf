@@ -1,5 +1,15 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { DEFAULT_STATE, type AppState } from '../store';
+import {
+  COUPLE_KEYS,
+  COUPLE_POINT_KEYS,
+  LAYER_KEYS,
+  LOCATION_KEYS,
+  MARKER_KEYS,
+  SETTINGS_KEYS,
+  STYLE_KEYS,
+  TOP_KEYS,
+} from './shareKeys';
 
 /** Fields eligible for a share link (uploaded marker images excluded — too large for a URL). */
 const SHARE_KEYS = [
@@ -23,82 +33,6 @@ type ShareState = Pick<AppState, (typeof SHARE_KEYS)[number]> & {
   markers: AppState['markers'];
 };
 
-/**
- * Short aliases for every field that can end up in a share link. Full,
- * descriptive names cost real bytes once compressed (LZ only exploits
- * repetition *within* one small JSON string, so verbose keys used once
- * each are barely compressed), so the payload uses these instead. Purely
- * an encoding detail — a one-time change is fine since this feature ships
- * with no real links out in the wild yet.
- */
-const TOP_KEYS: Record<string, string> = {
-  location: 'p',
-  center: 'c',
-  zoom: 'z',
-  themeId: 't',
-  customTheme: 'x',
-  layoutId: 'l',
-  styleOpts: 'o',
-  layers: 'y',
-  markerSize: 'ms',
-  markerColor: 'mc',
-  route: 'r',
-  routeWidth: 'rw',
-  settings: 'se',
-  markers: 'mk',
-  couple: 'cp',
-};
-
-const LOCATION_KEYS: Record<string, string> = { name: 'n', country: 'c', lat: 'a', lng: 'g' };
-const STYLE_KEYS: Record<string, string> = {
-  showOverlay: 'ov',
-  showCity: 'ci',
-  showCountry: 'co',
-  showCoords: 'cd',
-  font: 'f',
-  customTitle: 'ti',
-  customSubtitle: 'su',
-  frame: 'fr',
-  textPos: 'tp',
-  textAlign: 'tl',
-  textOffset: 'to',
-  textScale: 'ts',
-  textTracking: 'tk',
-  divider: 'dv',
-  grain: 'gr',
-  border: 'br',
-};
-const LAYER_KEYS: Record<string, string> = {
-  landcover: 'lc',
-  buildings: 'bl',
-  water: 'wa',
-  parks: 'pk',
-  roads: 'rd',
-  rail: 'ra',
-  aeroway: 'ae',
-  boundaries: 'bd',
-};
-const SETTINGS_KEYS: Record<string, string> = { scale: 'sc', format: 'fm', bleedMm: 'bl' };
-const COUPLE_KEYS: Record<string, string> = {
-  enabled: 'e',
-  a: 'a',
-  b: 'b',
-  date: 'd',
-  units: 'u',
-  separator: 's',
-  showDistance: 'sd',
-  curve: 'cv',
-  dashed: 'dh',
-  lineWidth: 'w',
-};
-const COUPLE_POINT_KEYS: Record<string, string> = {
-  name: 'n',
-  country: 'c',
-  lat: 'a',
-  lng: 'g',
-  label: 'l',
-};
-const MARKER_KEYS: Record<string, string> = { icon: 'i', lng: 'g', lat: 'a', label: 'l' };
 
 function invert(m: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(m).map(([k, v]) => [v, k]));

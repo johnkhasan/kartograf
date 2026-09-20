@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        { "type": "query", "key": "s" },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot|crawler|spider|preview|telegram|whatsapp|twitter|facebook|discord|slack|linkedin|skype|vkshare|embedly|quora|pinterest|redditbot|applebot).*"
+        }
+      ],
+      "destination": "/api/preview"
+    }
+  ]
+}
