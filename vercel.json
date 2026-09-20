@@ -16,5 +16,10 @@
       ],
       "destination": "/api/preview"
     }
-  ]
+  ],
+  "functions": {
+    "api/og.ts": {
+      "includeFiles": "public/fonts/space-grotesk-700.ttf"
+    }
+  }
 }

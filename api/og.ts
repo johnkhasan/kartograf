@@ -1,4 +1,6 @@
-import { ImageResponse } from '@vercel/og';
+import { readFileSync } from 'node:fs';
+import satori from 'satori';
+import { Resvg } from '@resvg/resvg-js';
 import { readShare } from './_share.js';
 
 const WIDTH = 1200;
@@ -30,15 +32,18 @@ const el = (
  * own palette, which the share code already holds. Set in the product's own
  * typeface, fetched from this same deployment.
  */
+/** The poster typeface, shipped with the function so a cold start never waits on a fetch. */
+let fontCache: Buffer | null = null;
+function posterFont(): Buffer {
+  if (!fontCache) fontCache = readFileSync('public/fonts/space-grotesk-700.ttf');
+  return fontCache;
+}
+
 export default async function handler(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const preview = readShare(searchParams.get('s') ?? '');
+  const preview = readShare(new URL(request.url).searchParams.get('s') ?? '');
   if (!preview) return new Response('Not found', { status: 404 });
 
   const { theme, title, subtitle, meta } = preview;
-  const font = await fetch(new URL('/fonts/space-grotesk-700.ttf', origin))
-    .then((r) => (r.ok ? r.arrayBuffer() : null))
-    .catch(() => null);
 
   const children: Node[] = [
     el(
@@ -120,11 +125,19 @@ export default async function handler(request: Request) {
     children
   );
 
-  return new ImageResponse(card as never, {
+  // satori turns the lettering into paths, so the rasterizer never needs a
+  // font of its own
+  const svg = await satori(card as never, {
     width: WIDTH,
     height: HEIGHT,
-    fonts: font ? [{ name: 'Poster', data: font, weight: 700, style: 'normal' }] : undefined,
+    fonts: [{ name: 'Poster', data: posterFont(), weight: 700, style: 'normal' }],
+  });
+
+  const png = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } }).render().asPng();
+
+  return new Response(new Uint8Array(png), {
     headers: {
+      'content-type': 'image/png',
       // the code fully determines the picture, so it never needs revalidating
       'cache-control': 'public, max-age=31536000, immutable',
     },

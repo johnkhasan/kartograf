@@ -13,12 +13,13 @@
     "predev": "npm run sync-worker"
   },
   "dependencies": {
-    "@vercel/og": "^1.0.2",
+    "@resvg/resvg-js": "^2.6.2",
     "jspdf": "^4.2.1",
     "lz-string": "^1.5.0",
     "maplibre-gl": "^6.9.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "satori": "^0.33.4",
     "zundo": "^2.3.0",
     "zustand": "^5.0.15"
   },
