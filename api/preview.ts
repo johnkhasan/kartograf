@@ -18,7 +18,7 @@ const escape = (s: string) =>
  * traffic this way matches crawler user agents only, and anyone who lands on
  * it anyway is sent straight on to the app with their code.
  */
-export default async function handler(request: Request) {
+export async function GET(request: Request) {
   // this runtime hands the handler a path, not an absolute URL
   const url = new URL(request.url, SITE);
   const code = url.searchParams.get('s') ?? '';

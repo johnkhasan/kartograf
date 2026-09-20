@@ -39,7 +39,7 @@ function posterFont(): Buffer {
   return fontCache;
 }
 
-export default async function handler(request: Request) {
+export async function GET(request: Request) {
   // this runtime hands the handler a path, not an absolute URL
   const url = new URL(request.url, 'http://localhost');
   const preview = readShare(url.searchParams.get('s') ?? '');
