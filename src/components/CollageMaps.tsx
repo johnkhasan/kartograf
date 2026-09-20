@@ -37,7 +37,7 @@ export function collageGeometry(
     }
   }
 
-  return { rects, labelPx: Math.max(7, width * 0.018) };
+  return { rects, labelPx: Math.max(8, width * 0.022) };
 }
 
 interface Props {
@@ -166,17 +166,25 @@ export default function CollageMaps({
               }}
             />
             {showLabels && (
-              <div
-                className="collage-label"
-                style={{
-                  color: theme.text,
-                  fontFamily: `'${font}', sans-serif`,
-                  fontSize: geometry.labelPx,
-                  letterSpacing: geometry.labelPx * 0.22,
-                  textShadow: `0 1px 4px ${theme.bg}, 0 0 8px ${theme.bg}`,
-                }}
-              >
-                {(cell.label || cell.location.name).toUpperCase()}
+              <div className="collage-label">
+                <span
+                  className="collage-plate"
+                  style={{
+                    // a plate in the poster's own background colour, so the
+                    // caption reads as part of the design rather than
+                    // something lost in the streets underneath
+                    background: theme.bg,
+                    color: theme.text,
+                    fontFamily: `'${font}', sans-serif`,
+                    fontSize: geometry.labelPx,
+                    letterSpacing: geometry.labelPx * 0.22,
+                    textIndent: geometry.labelPx * 0.22,
+                    padding: `${geometry.labelPx * 0.45}px ${geometry.labelPx * 0.85}px`,
+                    borderRadius: geometry.labelPx * 2,
+                  }}
+                >
+                  {(cell.label || cell.location.name).toUpperCase()}
+                </span>
               </div>
             )}
           </div>

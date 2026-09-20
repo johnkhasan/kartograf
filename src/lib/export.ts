@@ -510,7 +510,11 @@ async function exportCollage(
   return out;
 }
 
-/** The caption under a collage panel, haloed the way the preview draws it. */
+/**
+ * The caption under a collage panel, set on a plate in the poster's own
+ * background colour — over a dense street map a haloed line of type just
+ * disappears, and the plate reads as part of the design.
+ */
 function drawCollageLabel(
   ctx: CanvasRenderingContext2D,
   job: ExportJob,
@@ -518,20 +522,39 @@ function drawCollageLabel(
   panel: FrameRect,
   size: number
 ) {
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = `500 ${size}px "${job.styleOpts.font}", sans-serif`;
-  setLetterSpacing(ctx, size * 0.22);
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = size * 0.5;
-  ctx.strokeStyle = job.theme.bg;
-  const x = panel.x + panel.w / 2;
-  const y = panel.y + panel.h - panel.h * 0.04;
   const label = text.toUpperCase();
-  ctx.strokeText(label, x, y);
+  const tracking = size * 0.22;
+  const padX = size * 0.85;
+  const padY = size * 0.45;
+
+  ctx.save();
+  ctx.font = `700 ${size}px "${job.styleOpts.font}", sans-serif`;
+  setLetterSpacing(ctx, tracking);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const textWidth = ctx.measureText(label).width;
+  const plateW = textWidth + padX * 2;
+  const plateH = size + padY * 2;
+  const cx = panel.x + panel.w / 2;
+  const cy = panel.y + panel.h - panel.h * 0.04 - plateH / 2;
+
+  ctx.fillStyle = job.theme.bg;
+  const x = cx - plateW / 2;
+  const y = cy - plateH / 2;
+  const r = plateH / 2;
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(x, y, plateW, plateH, r);
+    ctx.fill();
+  } else {
+    ctx.fillRect(x, y, plateW, plateH);
+  }
+
   ctx.fillStyle = job.theme.text;
-  ctx.fillText(label, x, y);
+  // the trailing letter space pushes the run left of centre, as it does in
+  // the preview's text-indent
+  ctx.fillText(label, cx + tracking / 2, cy);
   setLetterSpacing(ctx, 0);
   ctx.restore();
 }
