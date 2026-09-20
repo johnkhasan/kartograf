@@ -3,7 +3,15 @@ import type { Lang } from './types';
 
 const STRINGS = {
   uz: {
-    panelTemplates: 'SHABLON',
+    panelStart: 'BOSHLASH',
+    myPosters: 'MENING POSTERLARIM',
+    saveCurrent: '+ JORIY POSTERNI SAQLASH',
+    projectSaving: 'SAQLANMOQDA…',
+    noProjects: "Hali saqlangan poster yo‘q. Saqlansa, istalgan vaqtda qaytib ochasiz.",
+    openProject: 'Ochish',
+    confirmShort: 'Aniqmi?',
+    projectQuota: "Xotira to‘ldi — eski posterlardan birini o‘chiring.",
+    panelTemplates: 'SHABLONLAR',
     templatesHint:
       "Tayyor uslub — bir tegishda mavzu, format va matn joylashuvi qo‘yiladi. Joyingiz va belgilaringizga tegmaydi.",
     templateLabels: {
@@ -166,7 +174,15 @@ const STRINGS = {
     } as Record<string, string>,
   },
   en: {
-    panelTemplates: 'TEMPLATE',
+    panelStart: 'START',
+    myPosters: 'MY POSTERS',
+    saveCurrent: '+ SAVE CURRENT POSTER',
+    projectSaving: 'SAVING…',
+    noProjects: 'No saved posters yet. Save one and you can come back to it any time.',
+    openProject: 'Open',
+    confirmShort: 'Sure?',
+    projectQuota: 'Storage is full — delete one of the older posters.',
+    panelTemplates: 'TEMPLATES',
     templatesHint:
       'A ready-made look — sets the theme, format and text placement in one tap. Your location and markers are left alone.',
     templateLabels: {

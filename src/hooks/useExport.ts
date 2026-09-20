@@ -3,7 +3,7 @@ import { useStore, activeTheme } from '../store';
 import { getLayout } from '../data/layouts';
 import { exportPoster, type ExportJob } from '../lib/export';
 import { getStrings } from '../i18n';
-import type { ExportStage } from '../types';
+import type { ExportSettings, ExportStage } from '../types';
 
 export const POSTER_MAP_ID = 'poster-map';
 
@@ -24,7 +24,10 @@ export function useExport() {
   /** A rendered file the share sheet refused because the tap had gone stale. */
   const [pendingShare, setPendingShare] = useState<File | null>(null);
 
-  const render = async (deliver: ExportJob['deliver']): Promise<File | null> => {
+  const render = async (
+    deliver: ExportJob['deliver'],
+    settingsOverride?: ExportSettings
+  ): Promise<File | null> => {
     const s = useStore.getState();
     const el = document.getElementById(POSTER_MAP_ID);
     return exportPoster({
@@ -43,18 +46,22 @@ export function useExport() {
       route: s.route,
       routeWidth: s.routeWidth,
       couple: s.couple,
-      settings: s.settings,
+      settings: settingsOverride ?? s.settings,
       deliver,
       onProgress: setStage,
     });
   };
 
-  const run = async <T,>(deliver: ExportJob['deliver'], after: (file: File | null) => T | Promise<T>) => {
+  const run = async <T,>(
+    deliver: ExportJob['deliver'],
+    after: (file: File | null) => T | Promise<T>,
+    settingsOverride?: ExportSettings
+  ) => {
     if (useStore.getState().exporting) return null;
     setError(null);
     useStore.getState().setExporting(true);
     try {
-      return await after(await render(deliver));
+      return await after(await render(deliver, settingsOverride));
     } catch (e) {
       console.error(e);
       setError(getStrings(useStore.getState().lang).exportError);
@@ -100,6 +107,27 @@ export function useExport() {
     return 'ready';
   };
 
+  /**
+   * A small JPEG of the current poster, for the saved-projects list. Rendered
+   * through the same pipeline at 1x and then scaled down, so the card shows
+   * the actual place rather than a generic swatch; a few kB in localStorage.
+   */
+  const renderThumb = async (width = 200): Promise<string> => {
+    const file = await run('file', (f) => f, { scale: 1, format: 'jpeg' });
+    if (!file) return '';
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = Math.round((width * bitmap.height) / bitmap.width);
+      canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return canvas.toDataURL('image/jpeg', 0.7);
+    } catch {
+      return '';
+    }
+  };
+
   const shareReady = async (): Promise<boolean> => {
     if (!pendingShare) return false;
     const ok = await handOff(pendingShare);
@@ -107,5 +135,5 @@ export function useExport() {
     return ok;
   };
 
-  return { download, shareImage, shareReady, pendingShare, exporting, stage, error };
+  return { download, shareImage, shareReady, renderThumb, pendingShare, exporting, stage, error };
 }

@@ -15,7 +15,7 @@ import {
   IconTheme,
   IconType,
 } from './Icons';
-import TemplatesPanel from './panels/TemplatesPanel';
+import StartPanel from './panels/StartPanel';
 import LocationPanel from './panels/LocationPanel';
 import ThemePanel from './panels/ThemePanel';
 import LayoutPanel from './panels/LayoutPanel';
@@ -27,7 +27,7 @@ import RoutesPanel from './panels/RoutesPanel';
 import SettingsPanel from './panels/SettingsPanel';
 
 const PANELS: Record<PanelId, React.ComponentType> = {
-  templates: TemplatesPanel,
+  templates: StartPanel,
   location: LocationPanel,
   theme: ThemePanel,
   layout: LayoutPanel,
@@ -144,7 +144,7 @@ export default function Sidebar() {
   };
 
   const TABS: Array<{ id: PanelId; label: string; icon: React.ReactNode }> = [
-    { id: 'templates', label: t.panelTemplates, icon: <IconTemplate /> },
+    { id: 'templates', label: t.panelStart, icon: <IconTemplate /> },
     { id: 'location', label: t.location, icon: <IconLocation /> },
     { id: 'theme', label: t.theme, icon: <IconTheme /> },
     { id: 'layout', label: t.layout, icon: <IconLayout /> },

@@ -1608,3 +1608,97 @@ body {
   line-height: 1.35;
   color: var(--text-dim);
 }
+
+/* ---------- saved posters ---------- */
+.proj-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.proj-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.proj-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel2);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.proj-open:hover {
+  border-color: var(--accent);
+}
+
+.proj-thumb {
+  flex: none;
+  width: 34px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.proj-thumb-empty {
+  display: block;
+}
+
+.proj-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.proj-name {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proj-date {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.proj-del {
+  flex: none;
+  width: 32px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel2);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.proj-del:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.proj-del.confirm {
+  width: auto;
+  padding: 0 9px;
+  font-size: 10px;
+  color: var(--danger);
+  border-color: var(--danger);
+}
