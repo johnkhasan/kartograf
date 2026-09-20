@@ -1,5 +1,5 @@
 import { ImageResponse } from '@vercel/og';
-import { readShare } from './_share';
+import { readShare } from './_share.js';
 
 const WIDTH = 1200;
 const HEIGHT = 630;

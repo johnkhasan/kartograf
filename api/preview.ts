@@ -1,4 +1,4 @@
-import { readShare } from './_share';
+import { readShare } from './_share.js';
 
 const SITE = 'https://map.javohir.ru';
 

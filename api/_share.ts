@@ -1,6 +1,6 @@
 import { decompressFromEncodedURIComponent } from 'lz-string';
-import { COUPLE_POINT_KEYS, LOCATION_KEYS, TOP_KEYS } from '../src/lib/shareKeys';
-import { getTheme } from '../src/data/themes';
+import { COUPLE_POINT_KEYS, LOCATION_KEYS, TOP_KEYS } from '../src/lib/shareKeys.js';
+import { getTheme } from '../src/data/themes.js';
 import type { Theme } from '../src/types';
 
 /**
