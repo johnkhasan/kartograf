@@ -5,6 +5,8 @@ import { getTheme } from './data/themes';
 import type { Template } from './data/templates';
 import type { ProjectState } from './lib/projects';
 import type {
+  CollageCell,
+  CollageState,
   CoupleState,
   CouplePoint,
   ExportSettings,
@@ -36,6 +38,7 @@ export interface AppState {
   routeWidth: number;
   drawingRoute: boolean;
   couple: CoupleState;
+  collage: CollageState;
   settings: ExportSettings;
   activePanel: PanelId | null;
   modalOpen: boolean;
@@ -71,6 +74,10 @@ export interface AppState {
   applyTemplate: (tpl: Template) => void;
   loadProject: (state: ProjectState) => void;
   setCouple: (patch: Partial<CoupleState>) => void;
+  setCollage: (patch: Partial<CollageState>) => void;
+  addCollageCell: (location: LocationInfo) => void;
+  updateCollageCell: (id: string, patch: Partial<CollageCell>) => void;
+  removeCollageCell: (id: string) => void;
   setCouplePoint: (which: 'a' | 'b', point: CouplePoint | null) => void;
   setSettings: (patch: Partial<ExportSettings>) => void;
   setActivePanel: (panel: PanelId | null) => void;
@@ -95,6 +102,7 @@ const HISTORY_KEYS = [
   'route',
   'routeWidth',
   'couple',
+  'collage',
   'settings',
 ] as const;
 
@@ -146,6 +154,7 @@ export const DEFAULT_STATE: Pick<
   | 'routeWidth'
   | 'drawingRoute'
   | 'couple'
+  | 'collage'
   | 'settings'
   | 'activePanel'
   | 'modalOpen'
@@ -205,6 +214,13 @@ export const DEFAULT_STATE: Pick<
     curve: true,
     dashed: false,
     lineWidth: 2.5,
+  },
+  collage: {
+    enabled: false,
+    cells: [],
+    direction: 'column',
+    gap: 0.03,
+    showLabels: true,
   },
   settings: { scale: 2, format: 'png', bleedMm: 0 },
   activePanel: 'location',
@@ -271,6 +287,34 @@ export const useStore = create<AppState>()(
           })),
         loadProject: (state) => set({ ...state }),
         setCouple: (patch) => set((s) => ({ couple: { ...s.couple, ...patch } })),
+        setCollage: (patch) => set((s) => ({ collage: { ...s.collage, ...patch } })),
+        addCollageCell: (location) =>
+          set((s) => ({
+            collage: {
+              ...s.collage,
+              cells: [
+                ...s.collage.cells,
+                {
+                  id: genId(),
+                  location,
+                  center: [location.lng, location.lat] as [number, number],
+                  zoom: 12,
+                  label: '',
+                },
+              ],
+            },
+          })),
+        updateCollageCell: (id, patch) =>
+          set((s) => ({
+            collage: {
+              ...s.collage,
+              cells: s.collage.cells.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+            },
+          })),
+        removeCollageCell: (id) =>
+          set((s) => ({
+            collage: { ...s.collage, cells: s.collage.cells.filter((c) => c.id !== id) },
+          })),
         setCouplePoint: (which, point) =>
           set((s) => ({ couple: { ...s.couple, [which]: point } })),
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
@@ -304,6 +348,7 @@ export const useStore = create<AppState>()(
           ...current,
           ...p,
           layers: { ...current.layers, ...p.layers },
+          collage: { ...current.collage, ...p.collage },
           styleOpts: { ...current.styleOpts, ...p.styleOpts },
           settings: { ...current.settings, ...p.settings },
           couple: { ...current.couple, ...p.couple },

@@ -28,6 +28,22 @@ export const TOP_KEYS: Record<string, string> = {
   settings: 'se',
   markers: 'mk',
   couple: 'cp',
+  collage: 'cg',
+};
+
+export const COLLAGE_KEYS: Record<string, string> = {
+  enabled: 'e',
+  cells: 'c',
+  direction: 'dr',
+  gap: 'g',
+  showLabels: 'sl',
+};
+
+export const COLLAGE_CELL_KEYS: Record<string, string> = {
+  location: 'p',
+  center: 'c',
+  zoom: 'z',
+  label: 'l',
 };
 
 export const LOCATION_KEYS: Record<string, string> = { name: 'n', country: 'c', lat: 'a', lng: 'g' };

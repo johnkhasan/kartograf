@@ -56,6 +56,13 @@ export const IconHeart = (p: IconProps) => (
   </svg>
 );
 
+export const IconCollage = (p: IconProps) => (
+  <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="3" width="18" height="7.5" rx="1.4" />
+    <rect x="3" y="13.5" width="18" height="7.5" rx="1.4" />
+  </svg>
+);
+
 export const IconRoute = (p: IconProps) => (
   <svg width={S(p)} height={S(p)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <circle cx="6" cy="19" r="2" />

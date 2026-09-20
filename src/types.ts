@@ -96,6 +96,25 @@ export interface CoupleState {
   lineWidth: number;
 }
 
+/** One map panel of a collage poster. */
+export interface CollageCell {
+  id: string;
+  location: LocationInfo;
+  center: [number, number];
+  zoom: number;
+  /** caption under the panel; empty = the place's own name */
+  label: string;
+}
+
+export interface CollageState {
+  enabled: boolean;
+  cells: CollageCell[];
+  direction: 'row' | 'column';
+  /** space between panels, as a fraction of the poster's width */
+  gap: number;
+  showLabels: boolean;
+}
+
 export interface LayerToggles {
   landcover: boolean;
   buildings: boolean;
@@ -153,6 +172,7 @@ export type PanelId =
   | 'layers'
   | 'markers'
   | 'couple'
+  | 'collage'
   | 'routes'
   | 'settings';
 

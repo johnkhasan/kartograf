@@ -12,6 +12,7 @@ import { useStore, activeTheme, useActiveTheme } from '../store';
 import { buildMapStyle } from '../lib/mapStyle';
 import { applyCoupleLayers } from '../lib/couple';
 import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from '../lib/posterText';
+import CollageMaps, { collageGeometry } from './CollageMaps';
 import { borderRules, grainSize, grainTile } from '../lib/grain';
 import { markerSvg } from '../data/markerIcons';
 import { FRAME_PAD, FRAME_BOTTOM } from '../lib/export';
@@ -51,6 +52,7 @@ export default function PosterPreview() {
     routeWidth,
     drawingRoute,
     couple,
+    collage,
     viewMode,
     moveMarker,
     removeMarker,
@@ -370,9 +372,12 @@ export default function PosterPreview() {
 
   const w = posterSize.w;
   const framed = styleOpts.frame;
+  // a collage replaces the single map entirely: its panels carry their own
+  // places, so markers, routes and the couple line have nothing to sit on
+  const asCollage = collage.enabled && collage.cells.length >= 2;
   const metrics = posterTextMetrics(styleOpts, w);
 
-  const lines = posterLines({ styleOpts, location, couple });
+  const lines = posterLines({ styleOpts, location, couple, collage });
   const box = posterTextBox({ styleOpts, width: w, height: posterSize.h });
 
   const flexAlign =
@@ -392,10 +397,13 @@ export default function PosterPreview() {
   const band = Math.round(posterSize.h * FRAME_BOTTOM);
   // the text band swaps to the top when the text is anchored there, matching
   // frameRect() in lib/export.ts
+  const noPosterText = !lines.title && !lines.subtitle;
   const mapRectStyle = framed
-    ? styleOpts.textPos === 'top'
-      ? { top: band, left: pad, right: pad, bottom: pad }
-      : { top: pad, left: pad, right: pad, bottom: band }
+    ? noPosterText
+      ? { top: pad, left: pad, right: pad, bottom: pad }
+      : styleOpts.textPos === 'top'
+        ? { top: band, left: pad, right: pad, bottom: pad }
+        : { top: pad, left: pad, right: pad, bottom: band }
     : { inset: 0 };
 
   return (
@@ -407,9 +415,31 @@ export default function PosterPreview() {
         <div
           id={POSTER_MAP_ID}
           ref={mapContainerRef}
-          className={'poster-map' + (drawingRoute ? ' drawing' : '')}
+          className={
+            'poster-map' + (drawingRoute ? ' drawing' : '') + (asCollage ? ' hidden-map' : '')
+          }
           style={framed ? { ...mapRectStyle, border: `1.5px solid ${theme.accent}` } : mapRectStyle}
         />
+
+        {asCollage && (
+          <div className="collage-area" style={mapRectStyle}>
+            <CollageMaps
+              cells={collage.cells}
+              geometry={collageGeometry(
+                collage.cells.length,
+                collage.direction,
+                collage.gap,
+                framed ? w - pad * 2 : w,
+                framed ? posterSize.h - pad - (noPosterText ? pad : band) : posterSize.h
+              )}
+              theme={theme}
+              layers={layers}
+              styleKey={`${themeId}|${JSON.stringify(customTheme)}|${JSON.stringify(layers)}`}
+              showLabels={collage.showLabels}
+              font={styleOpts.font}
+            />
+          </div>
+        )}
 
         {mapLoading && (
           <div

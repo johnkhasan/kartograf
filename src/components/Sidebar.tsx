@@ -9,6 +9,7 @@ import {
   IconLayout,
   IconLocation,
   IconMarker,
+  IconCollage,
   IconRoute,
   IconSettings,
   IconTemplate,
@@ -23,6 +24,7 @@ import StylePanel from './panels/StylePanel';
 import LayersPanel from './panels/LayersPanel';
 import MarkersPanel from './panels/MarkersPanel';
 import CouplePanel from './panels/CouplePanel';
+import CollagePanel from './panels/CollagePanel';
 import RoutesPanel from './panels/RoutesPanel';
 import SettingsPanel from './panels/SettingsPanel';
 
@@ -35,6 +37,7 @@ const PANELS: Record<PanelId, React.ComponentType> = {
   layers: LayersPanel,
   markers: MarkersPanel,
   couple: CouplePanel,
+  collage: CollagePanel,
   routes: RoutesPanel,
   settings: SettingsPanel,
 };
@@ -152,6 +155,7 @@ export default function Sidebar() {
     { id: 'layers', label: t.panelLayers, icon: <IconLayers /> },
     { id: 'markers', label: t.markers, icon: <IconMarker /> },
     { id: 'couple', label: t.panelCouple, icon: <IconHeart /> },
+    { id: 'collage', label: t.panelCollage, icon: <IconCollage /> },
     { id: 'routes', label: t.panelRoutes, icon: <IconRoute /> },
     { id: 'settings', label: t.panelSettings, icon: <IconSettings /> },
   ];

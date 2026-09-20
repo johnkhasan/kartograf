@@ -2,10 +2,18 @@ import { Map as MLMap, type ErrorEvent } from 'maplibre-gl';
 import { buildMapStyle } from './mapStyle';
 import { applyCoupleLayers, coupleActive } from './couple';
 import { borderRules, grainSize, grainTile } from './grain';
+import { collageGeometry } from '../components/CollageMaps';
 import { HEART, heartOutline, pdfFontSet, pdfSafeText, type PdfFontSet } from './pdfFonts';
-import { posterLines, posterScrim, posterTextBox, posterTextMetrics } from './posterText';
+import {
+  posterLines,
+  posterScrim,
+  posterTextBox,
+  posterTextIsEmpty,
+  posterTextMetrics,
+} from './posterText';
 import { MARKER_ICONS } from '../data/markerIcons';
 import type {
+  CollageState,
   CoupleState,
   ExportSettings,
   ExportStage,
@@ -36,6 +44,7 @@ export interface ExportJob {
   route: [number, number][];
   routeWidth: number;
   couple: CoupleState;
+  collage: CollageState;
   settings: ExportSettings;
   /** 'download' saves the file; 'file' hands it back instead, for sharing */
   deliver?: 'download' | 'file';
@@ -72,10 +81,13 @@ export function frameRect(
   w: number,
   h: number,
   framed: boolean,
-  textPos: StyleOptions['textPos'] = 'bottom'
+  textPos: StyleOptions['textPos'] = 'bottom',
+  /** no text to leave room for — the map takes the whole inset */
+  uniform = false
 ): FrameRect {
   if (!framed) return { x: 0, y: 0, w, h };
   const pad = Math.round(w * FRAME_PAD);
+  if (uniform) return { x: pad, y: pad, w: w - pad * 2, h: h - pad * 2 };
   const band = Math.round(h * FRAME_BOTTOM);
   const top = textPos === 'top' ? band : pad;
   const bottom = textPos === 'top' ? pad : band;
@@ -97,7 +109,19 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
   w = Math.round(w);
   h = Math.round(h);
 
-  const rect = frameRect(w, h, job.styleOpts.frame, job.styleOpts.textPos);
+  const rect = frameRect(
+    w,
+    h,
+    job.styleOpts.frame,
+    job.styleOpts.textPos,
+    // a captioned collage with no poster text has nothing to reserve a band for
+    posterTextIsEmpty({
+      styleOpts: job.styleOpts,
+      location: job.location,
+      couple: job.couple,
+      collage: job.collage,
+    })
+  );
 
   // Hidden container for the high-res render (sized to the map area only)
   const container = document.createElement('div');
@@ -105,6 +129,17 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
   document.body.appendChild(container);
 
   const zoomOffset = Math.log2(rect.w / job.previewMapWidth);
+
+  if (job.collage.enabled && job.collage.cells.length >= 2) {
+    try {
+      const out = await exportCollage(job, w, h, rect, zoomOffset, container);
+      // a collage has no single map to set vector text against, and its
+      // panels already carry their own captions
+      return await deliver(out, job, w, h, null);
+    } finally {
+      container.remove();
+    }
+  }
 
   const map = new MLMap({
     container,
@@ -193,40 +228,7 @@ export async function exportPoster(job: ExportJob): Promise<File | null> {
     await drawGrain(ctx, job, w, h);
     drawBorder(ctx, job, w, h);
 
-    onProgress?.('saving');
-    // a couple poster is about the pair, so name the file after both places
-    const named = coupleActive(job.couple)
-      ? `${job.couple.a.name}-${job.couple.b.name}`
-      : job.location.name;
-    const slug = named.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'poster';
-    const base = `kartograf-${slug}-${layout.id}`;
-
-    if (settings.format === 'pdf') {
-      const blob = await buildPdf(out, job, w, h, vectorText && plan ? { plan, fonts: vectorText } : null);
-      if (job.deliver === 'file') {
-        return new File([blob], `${base}.pdf`, { type: 'application/pdf' });
-      }
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `${base}.pdf`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
-      return null;
-    }
-
-    const mime = settings.format === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, mime, 0.92));
-    if (!blob) throw new Error('Canvas export failed');
-
-    const name = `${base}.${settings.format === 'jpeg' ? 'jpg' : 'png'}`;
-    if (job.deliver === 'file') return new File([blob], name, { type: mime });
-
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    return null;
+    return await deliver(out, job, w, h, vectorText && plan ? { plan, fonts: vectorText } : null);
   } finally {
     map.remove();
     container.remove();
@@ -310,6 +312,170 @@ async function buildPdf(
   }
 
   return pdf.output('blob');
+}
+
+/**
+ * A collage poster: each panel is rendered on its own, one at a time.
+ *
+ * They go through the same hidden container in turn rather than all at once —
+ * four simultaneous WebGL contexts at export resolution is a lot to ask of a
+ * phone, and the panels don't need to be alive together to be composited.
+ */
+/**
+ * Turns the finished canvas into the file the caller asked for — saved to the
+ * downloads folder, or handed back for the share sheet. Shared by the single
+ * map and the collage, which differ only in how the canvas is painted.
+ */
+async function deliver(
+  out: HTMLCanvasElement,
+  job: ExportJob,
+  w: number,
+  h: number,
+  vector: { plan: OverlayPlan; fonts: PdfFontSet } | null
+): Promise<File | null> {
+  const { settings, layout } = job;
+  job.onProgress?.('saving');
+
+  // a couple poster is about the pair, so name the file after both places
+  const named = coupleActive(job.couple)
+    ? `${job.couple.a.name}-${job.couple.b.name}`
+    : job.collage.enabled && job.collage.cells.length >= 2
+      ? job.collage.cells.map((c) => c.location.name).join('-')
+      : job.location.name;
+  const slug = named.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'poster';
+  const base = `kartograf-${slug}-${layout.id}`;
+
+  if (settings.format === 'pdf') {
+    const blob = await buildPdf(out, job, w, h, vector);
+    if (job.deliver === 'file') {
+      return new File([blob], `${base}.pdf`, { type: 'application/pdf' });
+    }
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${base}.pdf`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+    return null;
+  }
+
+  const mime = settings.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+  const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, mime, 0.92));
+  if (!blob) throw new Error('Canvas export failed');
+
+  const name = `${base}.${settings.format === 'jpeg' ? 'jpg' : 'png'}`;
+  if (job.deliver === 'file') return new File([blob], name, { type: mime });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  return null;
+}
+
+async function exportCollage(
+  job: ExportJob,
+  w: number,
+  h: number,
+  rect: FrameRect,
+  zoomOffset: number,
+  container: HTMLDivElement
+): Promise<HTMLCanvasElement> {
+  const { theme, collage } = job;
+  const geometry = collageGeometry(
+    collage.cells.length,
+    collage.direction,
+    collage.gap,
+    rect.w,
+    rect.h
+  );
+
+  const out = document.createElement('canvas');
+  out.width = w;
+  out.height = h;
+  const ctx = out.getContext('2d')!;
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, w, h);
+
+  job.onProgress?.('rendering');
+
+  for (const [i, cell] of collage.cells.entries()) {
+    const panel = geometry.rects[i];
+    if (!panel) continue;
+
+    container.style.width = `${panel.w}px`;
+    container.style.height = `${panel.h}px`;
+
+    const map = new MLMap({
+      container,
+      style: buildMapStyle(theme, job.layers),
+      center: cell.center,
+      zoom: cell.zoom + zoomOffset,
+      interactive: false,
+      attributionControl: false,
+      pixelRatio: 1,
+      canvasContextAttributes: { preserveDrawingBuffer: true },
+      fadeDuration: 0,
+    });
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        map.once('error', (e: ErrorEvent) => reject(e.error ?? new Error('Map render failed')));
+        map.on('load', () => map.once('idle', () => resolve()));
+      });
+      await new Promise((r) => setTimeout(r, 250));
+      ctx.drawImage(map.getCanvas(), rect.x + panel.x, rect.y + panel.y, panel.w, panel.h);
+    } finally {
+      map.remove();
+    }
+
+    if (collage.showLabels) {
+      drawCollageLabel(ctx, job, cell.label || cell.location.name, {
+        x: rect.x + panel.x,
+        y: rect.y + panel.y,
+        w: panel.w,
+        h: panel.h,
+      }, geometry.labelPx);
+    }
+  }
+
+  job.onProgress?.('compositing');
+  if (job.styleOpts.frame) {
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = Math.max(1, w * 0.0015);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  }
+
+  await drawOverlay(ctx, job, w, h);
+  await drawGrain(ctx, job, w, h);
+  drawBorder(ctx, job, w, h);
+  return out;
+}
+
+/** The caption under a collage panel, haloed the way the preview draws it. */
+function drawCollageLabel(
+  ctx: CanvasRenderingContext2D,
+  job: ExportJob,
+  text: string,
+  panel: FrameRect,
+  size: number
+) {
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `500 ${size}px "${job.styleOpts.font}", sans-serif`;
+  setLetterSpacing(ctx, size * 0.22);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.5;
+  ctx.strokeStyle = job.theme.bg;
+  const x = panel.x + panel.w / 2;
+  const y = panel.y + panel.h - panel.h * 0.04;
+  const label = text.toUpperCase();
+  ctx.strokeText(label, x, y);
+  ctx.fillStyle = job.theme.text;
+  ctx.fillText(label, x, y);
+  setLetterSpacing(ctx, 0);
+  ctx.restore();
 }
 
 async function drawMarkers(
@@ -434,7 +600,12 @@ export interface OverlayPlan {
 export function overlayPlan(job: ExportJob, w: number, h: number): OverlayPlan | null {
   const { styleOpts, location } = job;
   const framed = styleOpts.frame;
-  const { title, subtitle, meta } = posterLines({ styleOpts, location, couple: job.couple });
+  const { title, subtitle, meta } = posterLines({
+    styleOpts,
+    location,
+    couple: job.couple,
+    collage: job.collage,
+  });
   const metrics = posterTextMetrics(styleOpts, w);
 
   // built bottom-up, so the block has to be measured before it can be

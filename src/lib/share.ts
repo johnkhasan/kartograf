@@ -1,6 +1,8 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { DEFAULT_STATE, type AppState } from '../store';
 import {
+  COLLAGE_CELL_KEYS,
+  COLLAGE_KEYS,
   COUPLE_KEYS,
   COUPLE_POINT_KEYS,
   LAYER_KEYS,
@@ -26,6 +28,7 @@ const SHARE_KEYS = [
   'route',
   'routeWidth',
   'couple',
+  'collage',
   'settings',
 ] as const;
 
@@ -118,6 +121,18 @@ function packShare(s: AppState): Record<string, unknown> {
   }
   if (Object.keys(coupleDiff).length) packed[TOP_KEYS.couple] = coupleDiff;
 
+  const collageDiff = diffObject(s.collage, DEFAULT_STATE.collage, COLLAGE_KEYS);
+  const cells = collageDiff[COLLAGE_KEYS.cells] as AppState['collage']['cells'] | undefined;
+  if (cells) {
+    // ids are session-local and the panels are rebuilt on load, so only the
+    // place, the view and the caption travel
+    collageDiff[COLLAGE_KEYS.cells] = cells.map((cell) => ({
+      ...rename({ center: cell.center, zoom: cell.zoom, label: cell.label }, COLLAGE_CELL_KEYS),
+      [COLLAGE_CELL_KEYS.location]: rename(cell.location, LOCATION_KEYS),
+    }));
+  }
+  if (Object.keys(collageDiff).length) packed[TOP_KEYS.collage] = collageDiff;
+
   // only built-in icon markers survive a share link; ids are regenerated on load
   const markers = s.markers.filter((m) => !m.icon.startsWith('up:'));
   if (markers.length) {
@@ -149,6 +164,23 @@ function unpackShare(packed: Record<string, unknown>): Partial<ShareState> {
         DEFAULT_STATE.settings,
         SETTINGS_KEYS
       );
+    } else if (key === 'collage') {
+      const collage = undiffObject(
+        value as Record<string, unknown>,
+        DEFAULT_STATE.collage,
+        COLLAGE_KEYS
+      );
+      const invCell = invert(COLLAGE_CELL_KEYS);
+      const invLoc = invert(LOCATION_KEYS);
+      collage.cells = (collage.cells as unknown as Array<Record<string, unknown>>).map((raw) => {
+        const cell = rename(raw, invCell) as Record<string, unknown>;
+        return {
+          ...cell,
+          id: freshMarkerId(),
+          location: rename(cell.location as object, invLoc),
+        };
+      }) as unknown as AppState['collage']['cells'];
+      out.collage = collage;
     } else if (key === 'couple') {
       const couple = undiffObject(
         value as Record<string, unknown>,

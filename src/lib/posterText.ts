@@ -1,11 +1,12 @@
 import { formatCoords } from './geocode';
 import { coupleActive, formatCoupleDistance, haversineMeters } from './couple';
-import type { CoupleState, LocationInfo, StyleOptions } from '../types';
+import type { CollageState, CoupleState, LocationInfo, StyleOptions } from '../types';
 
 export interface PosterTextInput {
   styleOpts: StyleOptions;
   location: LocationInfo;
   couple: CoupleState;
+  collage?: CollageState;
 }
 
 /**
@@ -26,11 +27,22 @@ export interface PosterLines {
 }
 
 export function posterLines(s: PosterTextInput): PosterLines {
-  const { styleOpts, location, couple } = s;
+  const { styleOpts, location, couple, collage } = s;
   const custom = {
     title: styleOpts.customTitle.trim(),
     subtitle: styleOpts.customSubtitle.trim(),
   };
+
+  // Each collage panel is captioned with its own place, so the poster's text
+  // block would only repeat one of them — it stays empty unless the design
+  // asks for a title of its own.
+  if (collage?.enabled && collage.cells.length >= 2) {
+    return {
+      title: styleOpts.showCity ? custom.title.toUpperCase() : '',
+      subtitle: styleOpts.showCountry ? custom.subtitle.toUpperCase() : '',
+      meta: '',
+    };
+  }
 
   if (coupleActive(couple)) {
     const sep = couple.separator || '♥';
@@ -128,6 +140,12 @@ export function posterTextBox(s: TextBoxInput) {
     centerShift: offset,
     sidePad,
   };
+}
+
+/** True when the poster carries no headline or subtitle at all. */
+export function posterTextIsEmpty(input: PosterTextInput): boolean {
+  const { title, subtitle } = posterLines(input);
+  return !title && !subtitle;
 }
 
 export interface ScrimStop {

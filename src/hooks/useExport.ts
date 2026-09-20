@@ -46,6 +46,7 @@ export function useExport() {
       route: s.route,
       routeWidth: s.routeWidth,
       couple: s.couple,
+      collage: s.collage,
       settings: settingsOverride ?? s.settings,
       deliver,
       onProgress: setStage,
